@@ -1,0 +1,5561 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Shift & Surrender - Pro Edition</title>
+
+<style>
+:root{
+    --bg-dark:#090a10;
+    --panel-bg:rgba(18,22,36,.96);
+    --accent-cyan:#00f0ff;
+    --accent-pink:#ff0055;
+    --accent-gold:#ffcc00;
+    --accent-purple:#9d00ff;
+    --text-light:#f0f4f8;
+    --text-muted:#8a99ad;
+}
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    user-select:none;
+    -webkit-user-select:none;
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:var(--bg-dark);
+    color:var(--text-light);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+#game-container{
+    position:relative;
+    width:960px;
+    height:540px;
+    overflow:hidden;
+    border-radius:12px;
+    background:#000;
+    border:2px solid rgba(0,240,255,.2);
+    box-shadow:0 15px 35px rgba(0,0,0,.9),
+               0 0 25px rgba(0,240,255,.25);
+}
+canvas{
+    display:block;
+    width:100%;
+    height:100%;
+    background:#0b0c14;
+}
+.overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    background:var(--panel-bg);
+    backdrop-filter:blur(8px);
+    z-index:10;
+    transition:opacity .25s ease,visibility .25s ease;
+}
+.hidden{
+    opacity:0;
+    pointer-events:none;
+    visibility:hidden;
+}
+h1{
+    font-size:3.5rem;
+    font-weight:900;
+    letter-spacing:3px;
+    color:var(--accent-cyan);
+    text-shadow:0 0 20px rgba(0,240,255,.7),
+                4px 4px 0 var(--accent-pink);
+    margin-bottom:5px;
+    text-transform:uppercase;
+}
+h2{
+    font-size:2.2rem;
+    color:var(--accent-cyan);
+    margin-bottom:20px;
+    text-shadow:0 0 12px rgba(0,240,255,.5);
+}
+.subtitle{
+    font-size:1.15rem;
+    color:var(--text-muted);
+    margin-bottom:30px;
+    font-style:italic;
+}
+.btn-group{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    width:300px;
+}
+.btn{
+    background:linear-gradient(135deg,#1d2538,#111625);
+    border:2px solid var(--accent-cyan);
+    color:var(--text-light);
+    padding:11px 24px;
+    font-size:1.05rem;
+    font-weight:700;
+    border-radius:8px;
+    cursor:pointer;
+    transition:.2s;
+    box-shadow:0 5px 15px rgba(0,0,0,.4);
+    text-align:center;
+    letter-spacing:1px;
+}
+.btn:hover{
+    background:var(--accent-cyan);
+    color:var(--bg-dark);
+    box-shadow:0 0 20px rgba(0,240,255,.7);
+    transform:translateY(-2px);
+}
+.btn:active{transform:translateY(1px)}
+.btn-secondary{border-color:var(--text-muted)}
+.btn-hard{
+    border-color:var(--accent-pink);
+    color:#fff;
+}
+.btn-hard:hover{
+    background:var(--accent-pink);
+    color:#fff;
+    box-shadow:0 0 25px rgba(255,0,85,.75);
+}
+.btn-locked{
+    border-color:#444;
+    color:#666;
+    cursor:not-allowed;
+    opacity:.65;
+}
+.btn-locked:hover{
+    background:linear-gradient(135deg,#1d2538,#111625);
+    color:#666;
+    box-shadow:none;
+    transform:none;
+}
+#hud{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    padding:15px 25px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    z-index:5;
+    pointer-events:none;
+    font-weight:700;
+    font-size:.95rem;
+}
+.hud-group{
+    display:flex;
+    gap:15px;
+}
+.hud-card{
+    background:rgba(11,13,22,.85);
+    border:1px solid rgba(0,240,255,.3);
+    padding:6px 16px;
+    border-radius:20px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,.5);
+}
+.hud-label{
+    color:var(--text-muted);
+    font-size:.8rem;
+}
+.hud-value{color:var(--accent-cyan)}
+.hud-btn{
+    pointer-events:auto;
+    background:rgba(15,17,26,.9);
+    border:1px solid var(--accent-cyan);
+    color:var(--text-light);
+    padding:6px 14px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
+    font-size:.85rem;
+}
+.hud-btn:hover{
+    background:var(--accent-cyan);
+    color:var(--bg-dark);
+}
+.level-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:12px;
+    width:680px;
+    max-height:315px;
+    overflow-y:auto;
+    padding:10px;
+    margin-bottom:20px;
+}
+.level-btn{
+    aspect-ratio:1;
+    background:rgba(255,255,255,.04);
+    border:2px solid rgba(255,255,255,.1);
+    border-radius:8px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    cursor:pointer;
+    transition:.2s;
+}
+.level-btn.unlocked{
+    border-color:var(--accent-cyan);
+    background:rgba(0,240,255,.08);
+}
+.level-btn.unlocked:hover{
+    background:var(--accent-cyan);
+    color:var(--bg-dark);
+    transform:scale(1.05);
+}
+.level-btn.completed{border-color:var(--accent-gold)}
+.level-btn.hard{
+    border-color:var(--accent-pink);
+    background:rgba(255,0,85,.07);
+}
+.level-btn.hard:hover{
+    background:var(--accent-pink);
+    color:white;
+}
+.level-btn.locked{
+    opacity:.35;
+    cursor:not-allowed;
+    border-color:#333;
+}
+.level-num{
+    font-size:1.4rem;
+    font-weight:bold;
+}
+.level-info{
+    font-size:.65rem;
+    margin-top:2px;
+    opacity:.8;
+}
+#death-msg{
+    position:absolute;
+    font-size:3.2rem;
+    font-weight:900;
+    color:var(--accent-pink);
+    text-shadow:0 0 25px rgba(255,0,85,.9);
+    pointer-events:none;
+    opacity:0;
+    transform:scale(.4);
+    transition:transform .15s cubic-bezier(.175,.885,.32,1.275),
+               opacity .15s ease;
+    z-index:6;
+    letter-spacing:2px;
+}
+#death-msg.show{
+    opacity:1;
+    transform:scale(1);
+}
+.controls-tip{
+    margin-top:15px;
+    font-size:.85rem;
+    color:var(--text-muted);
+    text-align:center;
+    line-height:1.6;
+}
+kbd{
+    background:#222738;
+    border:1px solid #444;
+    border-radius:4px;
+    padding:2px 6px;
+    color:#fff;
+    font-size:.75rem;
+}
+.hard-title{
+    color:var(--accent-pink);
+    text-shadow:0 0 18px rgba(255,0,85,.65);
+}
+.danger-note{
+    color:#ff668f;
+    margin-top:-12px;
+    margin-bottom:15px;
+    font-size:.85rem;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game-container">
+
+<canvas id="gameCanvas" width="960" height="540"></canvas>
+
+<div id="hud">
+    <div class="hud-group">
+        <div class="hud-card">
+            <span class="hud-label">Level</span>
+            <span id="hud-level" class="hud-value">01</span>
+        </div>
+
+        <div class="hud-card">
+            <span class="hud-label">Attempts</span>
+            <span id="hud-deaths" class="hud-value">0</span>
+        </div>
+
+        <div class="hud-card">
+            <span class="hud-label">Time</span>
+            <span id="hud-timer" class="hud-value">00:00.0</span>
+        </div>
+    </div>
+
+    <div class="hud-group">
+        <button class="hud-btn" id="btn-restart-hud">Restart [R]</button>
+        <button class="hud-btn" id="btn-pause-hud">Pause [Esc]</button>
+    </div>
+</div>
+
+<div id="death-msg">Try Again</div>
+
+
+<!-- ========================= Main Menu ========================= -->
+
+<div id="menu-main" class="overlay">
+
+    <h1>Shift & Surrender</h1>
+
+    <div class="subtitle">
+        Pro Edition - Expect the Unexpected
+    </div>
+
+    <div class="btn-group">
+
+        <button class="btn" id="btn-start">
+            Start Game
+        </button>
+
+        <button class="btn btn-secondary" id="btn-levels">
+            Level Select
+        </button>
+
+        <button class="btn btn-hard" id="btn-hard-menu">
+            Hard Mode 🔥
+        </button>
+
+        <button class="btn btn-secondary" id="btn-reset-data">
+            Reset Progress
+        </button>
+
+    </div>
+
+    <div class="controls-tip">
+        <kbd>A</kbd>/<kbd>D</kbd>
+        or
+        <kbd>←</kbd>/<kbd>→</kbd>
+        Move
+        &nbsp;|&nbsp;
+
+        <kbd>Space</kbd>/<kbd>W</kbd>
+        Jump
+        &nbsp;|&nbsp;
+
+        <kbd>Shift</kbd>
+        Dash
+        &nbsp;|&nbsp;
+
+        <kbd>R</kbd>
+        Restart
+        &nbsp;|&nbsp;
+
+        <kbd>Esc</kbd>
+        Pause
+    </div>
+
+</div>
+
+
+<!-- ========================= Normal Levels ========================= -->
+
+<div id="menu-levels" class="overlay hidden">
+
+    <h2>Select a Level</h2>
+
+    <div class="level-grid" id="level-grid"></div>
+
+    <button class="btn btn-secondary" id="btn-back-levels">
+        Back
+    </button>
+
+</div>
+
+
+<!-- ========================= Hard Mode ========================= -->
+
+<div id="menu-hard" class="overlay hidden">
+
+    <h2 class="hard-title">Hard Mode 🔥</h2>
+
+    <div class="danger-note">
+        20 Hard levels — complete the normal levels first
+    </div>
+
+    <div class="level-grid" id="hard-level-grid"></div>
+
+    <button class="btn btn-secondary" id="btn-back-hard">
+        Back
+    </button>
+
+</div>
+
+
+<!-- ========================= Pause ========================= -->
+
+<div id="menu-pause" class="overlay hidden">
+
+    <h2>Game Paused</h2>
+
+    <div class="btn-group">
+
+        <button class="btn" id="btn-resume">
+            Resume
+        </button>
+
+        <button class="btn btn-secondary" id="btn-pause-restart">
+            Restart Level
+        </button>
+
+        <button class="btn btn-secondary" id="btn-pause-select">
+            Level Select
+        </button>
+
+        <button class="btn btn-hard" id="btn-pause-hard">
+            Hard Mode
+        </button>
+
+        <button class="btn btn-secondary" id="btn-pause-main">
+            Main Menu
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- ========================= Victory ========================= -->
+
+<div id="menu-win" class="overlay hidden">
+
+    <h2 style="color:var(--accent-gold)">
+        Level Complete!
+    </h2>
+
+    <div style="margin-bottom:20px;text-align:center;line-height:1.8">
+
+        <div>
+            Attempts:
+            <span id="win-deaths"
+                  style="color:var(--accent-pink);font-weight:bold">
+                0
+            </span>
+        </div>
+
+        <div>
+            Time:
+            <span id="win-time"
+                  style="color:var(--accent-cyan);font-weight:bold">
+                00:00.0
+            </span>
+        </div>
+
+        <div>
+            Best Time:
+            <span id="win-best"
+                  style="color:var(--accent-gold);font-weight:bold">
+                00:00.0
+            </span>
+        </div>
+
+    </div>
+
+    <div class="btn-group">
+
+        <button class="btn" id="btn-next-level">
+            Next Level
+        </button>
+
+        <button class="btn btn-secondary" id="btn-win-select">
+            Level Select
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- ========================= Completion ========================= -->
+
+<div id="menu-complete" class="overlay hidden">
+
+    <h1 style="color:var(--accent-gold)">
+        Congratulations!
+    </h1>
+
+    <div class="subtitle">
+        You completed all 40 levels!
+    </div>
+
+    <div style="margin-bottom:25px;text-align:center;
+                line-height:1.8;font-size:1.2rem">
+
+        <div>
+            Total Attempts:
+            <span id="comp-deaths"
+                  style="color:var(--accent-pink);font-weight:bold">
+                0
+            </span>
+        </div>
+
+        <div>
+            Best Times:
+            <span id="comp-time"
+                  style="color:var(--accent-cyan);font-weight:bold">
+                00:00.0
+            </span>
+        </div>
+
+    </div>
+
+    <button class="btn" id="btn-complete-main">
+        Main Menu
+    </button>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* ============================================================
+   BACKGROUND IMAGES
+   Normal / Easy levels use EASY_BACKGROUND_URL.
+   Hard levels use HARD_BACKGROUND_URL.
+============================================================ */
+const EASY_BACKGROUND_URL="https://i.imgur.com/Qy8tsGc.jpeg";
+const HARD_BACKGROUND_URL="https://i.imgur.com/YpElTHv.jpeg";
+
+const easyBackgroundImage=new Image();
+const hardBackgroundImage=new Image();
+easyBackgroundImage.src=EASY_BACKGROUND_URL;
+hardBackgroundImage.src=HARD_BACKGROUND_URL;
+
+function drawCoverImage(ctx,img,w,h,alpha=1){
+    if(!img.complete || !img.naturalWidth || !img.naturalHeight)
+        return false;
+
+    const scale=Math.max(w/img.naturalWidth,h/img.naturalHeight);
+    const dw=img.naturalWidth*scale;
+    const dh=img.naturalHeight*scale;
+    const dx=(w-dw)/2;
+    const dy=(h-dh)/2;
+
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    ctx.drawImage(img,dx,dy,dw,dh);
+    ctx.restore();
+    return true;
+}
+
+/* ============================================================
+   AUDIO
+============================================================ */
+
+class SoundFX{
+
+    constructor(){
+        this.ctx=null;
+    }
+
+    init(){
+
+        if(!this.ctx){
+
+            const AudioCtx=
+                window.AudioContext||
+                window.webkitAudioContext;
+
+            if(AudioCtx)
+                this.ctx=new AudioCtx();
+        }
+
+        if(this.ctx && this.ctx.state==="suspended")
+            this.ctx.resume();
+    }
+
+    play(type){
+
+        if(!this.ctx)return;
+
+        const now=this.ctx.currentTime;
+
+        const make=(wave,f1,f2,duration,volume)=>{
+
+            const osc=this.ctx.createOscillator();
+            const gain=this.ctx.createGain();
+
+            osc.type=wave;
+
+            osc.frequency.setValueAtTime(f1,now);
+
+            if(f2)
+                osc.frequency.exponentialRampToValueAtTime(
+                    f2,
+                    now+duration
+                );
+
+            gain.gain.setValueAtTime(volume,now);
+
+            gain.gain.linearRampToValueAtTime(
+                .01,
+                now+duration
+            );
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(now);
+            osc.stop(now+duration);
+        };
+
+        if(type==="jump")
+            make("sine",160,450,.12,.2);
+
+        else if(type==="dash")
+            make("triangle",500,150,.15,.25);
+
+        else if(type==="land")
+            make("triangle",90,30,.08,.2);
+
+        else if(type==="death")
+            make("sawtooth",320,30,.28,.35);
+
+        else if(type==="trigger")
+            make("square",520,840,.12,.12);
+
+        else if(type==="click")
+            make("sine",800,null,.03,.05);
+
+        else if(type==="win"){
+
+            [440,554.37,659.25,880].forEach((f,i)=>{
+
+                const osc=this.ctx.createOscillator();
+                const gain=this.ctx.createGain();
+
+                const start=now+i*.08;
+
+                osc.type="triangle";
+                osc.frequency.value=f;
+
+                gain.gain.setValueAtTime(.2,start);
+                gain.gain.linearRampToValueAtTime(
+                    .01,
+                    start+.25
+                );
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(start);
+                osc.stop(start+.25);
+            });
+        }
+    }
+}
+
+const audio=new SoundFX();
+
+
+/* ============================================================
+   SAVE SYSTEM
+============================================================ */
+
+const SAVE_KEY="shift_surrender_pro_v3";
+
+let saveData={
+    unlocked:1,
+    deaths:{},
+    bestTimes:{},
+
+    hardUnlocked:false,
+    hardUnlockedLevels:{},
+    hardDeaths:{},
+    hardBestTimes:{},
+
+    totalDeaths:0
+};
+
+function loadProgress(){
+
+    try{
+
+        const raw=localStorage.getItem(SAVE_KEY);
+
+        if(raw){
+
+            const loaded=JSON.parse(raw);
+
+            saveData={
+                ...saveData,
+                ...loaded,
+
+                hardUnlockedLevels:{
+                    ...saveData.hardUnlockedLevels,
+                    ...(loaded.hardUnlockedLevels||{})
+                },
+
+                deaths:{
+                    ...saveData.deaths,
+                    ...(loaded.deaths||{})
+                },
+
+                bestTimes:{
+                    ...saveData.bestTimes,
+                    ...(loaded.bestTimes||{})
+                },
+
+                hardDeaths:{
+                    ...saveData.hardDeaths,
+                    ...(loaded.hardDeaths||{})
+                },
+
+                hardBestTimes:{
+                    ...saveData.hardBestTimes,
+                    ...(loaded.hardBestTimes||{})
+                }
+            };
+        }
+
+    }catch(e){}
+}
+
+function saveProgress(){
+
+    try{
+        localStorage.setItem(
+            SAVE_KEY,
+            JSON.stringify(saveData)
+        );
+    }catch(e){}
+}
+
+function resetProgress(){
+
+    saveData={
+        unlocked:1,
+        deaths:{},
+        bestTimes:{},
+        hardUnlocked:false,
+        hardUnlockedLevels:{},
+        hardDeaths:{},
+        hardBestTimes:{},
+        totalDeaths:0
+    };
+
+    saveProgress();
+}
+
+loadProgress();
+
+if(saveData.hardUnlocked){
+    saveData.hardUnlockedLevels=saveData.hardUnlockedLevels||{};
+    saveData.hardUnlockedLevels[1]=true;
+    saveProgress();
+}
+
+
+/* ============================================================
+   PARTICLES
+============================================================ */
+
+class Particle{
+
+    constructor(x,y,vx,vy,color,size,life){
+
+        this.x=x;
+        this.y=y;
+        this.vx=vx;
+        this.vy=vy;
+
+        this.color=color;
+        this.size=size;
+
+        this.life=life;
+        this.maxLife=life;
+    }
+
+    update(dt){
+
+        this.x+=this.vx*dt*60;
+        this.y+=this.vy*dt*60;
+
+        this.life-=dt;
+    }
+
+    draw(ctx,camX,camY){
+
+        if(this.life<=0)return;
+
+        ctx.save();
+
+        ctx.globalAlpha=
+            Math.max(0,this.life/this.maxLife);
+
+        ctx.fillStyle=this.color;
+
+        ctx.fillRect(
+            this.x-camX,
+            this.y-camY,
+            this.size,
+            this.size
+        );
+
+        ctx.restore();
+    }
+}
+
+class ParticleSystem{
+
+    constructor(){
+        this.particles=[];
+    }
+
+    spawn(x,y,count,color,speed=2,size=4){
+
+        for(let i=0;i<count;i++){
+
+            const ang=Math.random()*Math.PI*2;
+
+            const spd=
+                (Math.random()*.8+.2)*speed;
+
+            this.particles.push(
+                new Particle(
+                    x,
+                    y,
+                    Math.cos(ang)*spd,
+                    Math.sin(ang)*spd,
+                    color,
+                    Math.random()*size+2,
+                    Math.random()*.35+.15
+                )
+            );
+        }
+    }
+
+    update(dt){
+
+        for(let i=this.particles.length-1;i>=0;i--){
+
+            this.particles[i].update(dt);
+
+            if(this.particles[i].life<=0)
+                this.particles.splice(i,1);
+        }
+    }
+
+    draw(ctx,camX,camY){
+
+        for(const p of this.particles)
+            p.draw(ctx,camX,camY);
+    }
+
+    clear(){
+        this.particles=[];
+    }
+}
+
+
+/* ============================================================
+   CAMERA
+============================================================ */
+
+class Camera{
+
+    constructor(w,h){
+
+        this.x=0;
+        this.y=0;
+
+        this.width=w;
+        this.height=h;
+
+        this.shakeDuration=0;
+        this.shakeIntensity=0;
+
+        this.shakeX=0;
+        this.shakeY=0;
+    }
+
+    shake(intensity=8,duration=.2){
+
+        this.shakeIntensity=intensity;
+        this.shakeDuration=duration;
+    }
+
+    update(targetX,targetY,levelW,levelH,dt){
+
+        const destX=targetX-this.width/2;
+        const destY=targetY-this.height/2;
+
+        this.x+=(destX-this.x)*.12;
+        this.y+=(destY-this.y)*.12;
+
+        this.x=Math.max(
+            0,
+            Math.min(this.x,levelW-this.width)
+        );
+
+        this.y=Math.max(
+            0,
+            Math.min(this.y,levelH-this.height)
+        );
+
+        if(this.shakeDuration>0){
+
+            this.shakeDuration-=dt;
+
+            this.shakeX=
+                (Math.random()-.5)*
+                2*this.shakeIntensity;
+
+            this.shakeY=
+                (Math.random()-.5)*
+                2*this.shakeIntensity;
+
+        }else{
+
+            this.shakeX=0;
+            this.shakeY=0;
+        }
+    }
+
+    get renderX(){
+        return Math.round(this.x+this.shakeX);
+    }
+
+    get renderY(){
+        return Math.round(this.y+this.shakeY);
+    }
+}
+
+
+/* ============================================================
+   PLAYER
+============================================================ */
+
+class Player{
+
+    constructor(x,y){
+
+        this.spawnX=x;
+        this.spawnY=y;
+
+        this.x=x;
+        this.y=y;
+
+        this.w=22;
+        this.h=28;
+
+        this.vx=0;
+        this.vy=0;
+
+        this.speed=270;
+        this.accel=1900;
+        this.friction=1500;
+
+        this.gravity=1150;
+        this.jumpForce=440;
+        this.maxFallSpeed=650;
+
+        this.canDash=true;
+        this.isDashing=false;
+
+        this.dashTimer=0;
+        this.dashCooldown=0;
+
+        this.dashDir=1;
+
+        this.onWall=0;
+
+        this.grounded=false;
+        this.isDead=false;
+
+        this.facing=1;
+
+        this.controlsReversed=false;
+
+        this.coyoteTimer=0;
+        this.jumpBuffer=0;
+
+        this.COYOTE_MAX=.12;
+        this.BUFFER_MAX=.12;
+
+        this.scaleX=1;
+        this.scaleY=1;
+
+        this.trail=[];
+    }
+
+    reset(x=this.spawnX,y=this.spawnY){
+
+        this.x=x;
+        this.y=y;
+
+        this.vx=0;
+        this.vy=0;
+
+        this.grounded=false;
+        this.isDead=false;
+
+        this.coyoteTimer=0;
+        this.jumpBuffer=0;
+
+        this.controlsReversed=false;
+
+        this.scaleX=1;
+        this.scaleY=1;
+
+        this.canDash=true;
+
+        this.isDashing=false;
+
+        this.dashTimer=0;
+        this.dashCooldown=0;
+
+        this.trail=[];
+    }
+
+    update(dt,keys,level){
+
+        if(this.isDead)return;
+
+        if(this.dashCooldown>0)
+            this.dashCooldown-=dt;
+
+        let moveDir=0;
+
+        if(keys.KeyA||keys.ArrowLeft)
+            moveDir--;
+
+        if(keys.KeyD||keys.ArrowRight)
+            moveDir++;
+
+        if(this.controlsReversed)
+            moveDir*=-1;
+
+        if(moveDir!==0)
+            this.facing=Math.sign(moveDir);
+
+        if(
+            (keys.ShiftLeft||keys.ShiftRight)&&
+            this.canDash&&
+            this.dashCooldown<=0&&
+            !this.isDashing
+        ){
+
+            this.isDashing=true;
+            this.canDash=false;
+
+            this.dashTimer=.15;
+            this.dashCooldown=.6;
+
+            this.dashDir=
+                moveDir!==0?
+                moveDir:
+                this.facing;
+
+            audio.play("dash");
+
+            level.particles.spawn(
+                this.x+this.w/2,
+                this.y+this.h/2,
+                12,
+                "#00f0ff",
+                3
+            );
+        }
+
+        if(this.isDashing){
+
+            this.dashTimer-=dt;
+
+            this.vx=this.dashDir*650;
+            this.vy=0;
+
+            this.trail.push({
+                x:this.x,
+                y:this.y,
+                alpha:.6
+            });
+
+            if(this.dashTimer<=0)
+                this.isDashing=false;
+
+        }else{
+
+            if(moveDir!==0){
+
+                this.vx+=
+                    moveDir*this.accel*dt;
+
+                if(Math.abs(this.vx)>this.speed)
+                    this.vx=
+                        Math.sign(this.vx)*this.speed;
+
+            }else{
+
+                if(this.vx>0)
+                    this.vx=Math.max(
+                        0,
+                        this.vx-this.friction*dt
+                    );
+
+                else if(this.vx<0)
+                    this.vx=Math.min(
+                        0,
+                        this.vx+this.friction*dt
+                    );
+            }
+
+            const gravity=
+                level.gravityInverted?
+                -this.gravity:
+                this.gravity;
+
+            if(
+                this.onWall!==0&&
+                !this.grounded&&
+                this.vy>0
+            ){
+
+                this.vy+=gravity*dt*.3;
+
+                if(this.vy>120)
+                    this.vy=120;
+
+            }else{
+
+                this.vy+=gravity*dt;
+            }
+
+            if(Math.abs(this.vy)>this.maxFallSpeed)
+                this.vy=
+                    Math.sign(this.vy)*
+                    this.maxFallSpeed;
+        }
+
+        if(
+            keys.Space||
+            keys.KeyW||
+            keys.ArrowUp
+        )
+            this.jumpBuffer=this.BUFFER_MAX;
+        else
+            this.jumpBuffer-=dt;
+
+        if(this.grounded){
+
+            this.coyoteTimer=this.COYOTE_MAX;
+            this.canDash=true;
+
+        }else{
+
+            this.coyoteTimer-=dt;
+        }
+
+        if(this.jumpBuffer>0){
+
+            if(this.coyoteTimer>0){
+
+                this.vy=
+                    level.gravityInverted?
+                    this.jumpForce:
+                    -this.jumpForce;
+
+                this.jumpBuffer=0;
+                this.coyoteTimer=0;
+                this.grounded=false;
+
+                this.scaleX=.7;
+                this.scaleY=1.3;
+
+                audio.play("jump");
+
+                level.particles.spawn(
+                    this.x+this.w/2,
+                    this.y+this.h,
+                    8,
+                    "#00f0ff",
+                    1.5
+                );
+
+            }else if(
+                this.onWall!==0&&
+                !this.grounded
+            ){
+
+                this.vy=
+                    level.gravityInverted?
+                    this.jumpForce:
+                    -this.jumpForce;
+
+                this.vx=-this.onWall*320;
+
+                this.jumpBuffer=0;
+
+                this.scaleX=.8;
+                this.scaleY=1.2;
+
+                audio.play("jump");
+            }
+        }
+
+        for(let i=this.trail.length-1;i>=0;i--){
+
+            this.trail[i].alpha-=dt*3;
+
+            if(this.trail[i].alpha<=0)
+                this.trail.splice(i,1);
+        }
+
+        this.scaleX+=(1-this.scaleX)*12*dt;
+        this.scaleY+=(1-this.scaleY)*12*dt;
+
+        this.onWall=0;
+
+        this.x+=this.vx*dt;
+        this.collideX(level);
+
+        this.y+=this.vy*dt;
+        this.collideY(level);
+
+        if(
+            this.y>level.height+150||
+            this.y<-200
+        ){
+
+            level.killPlayer("Fell into the Abyss");
+        }
+    }
+
+    collideX(level){
+
+        const boxes=level.getSolidBoxes();
+
+        for(const b of boxes){
+
+            if(this.intersects(b)){
+
+                if(this.vx>0){
+
+                    this.x=b.x-this.w;
+                    this.vx=0;
+                    this.onWall=1;
+
+                }else if(this.vx<0){
+
+                    this.x=b.x+b.w;
+                    this.vx=0;
+                    this.onWall=-1;
+                }
+            }
+        }
+    }
+
+    collideY(level){
+
+        const wasGrounded=this.grounded;
+
+        this.grounded=false;
+
+        const boxes=level.getSolidBoxes();
+
+        for(const b of boxes){
+
+            if(this.intersects(b)){
+
+                if(!level.gravityInverted){
+
+                    if(
+                        this.vy>0&&
+                        this.y+this.h-this.vy*.05<=
+                        b.y+14
+                    ){
+
+                        this.y=b.y-this.h;
+                        this.vy=0;
+                        this.grounded=true;
+
+                        if(!wasGrounded){
+
+                            this.scaleX=1.35;
+                            this.scaleY=.65;
+
+                            audio.play("land");
+                        }
+
+                        if(b.vx)
+                            this.x+=b.vx;
+
+                    }else if(this.vy<0){
+
+                        this.y=b.y+b.h;
+                        this.vy=0;
+                    }
+
+                }else{
+
+                    if(
+                        this.vy<0&&
+                        this.y-this.vy*.05>=
+                        b.y+b.h-14
+                    ){
+
+                        this.y=b.y+b.h;
+                        this.vy=0;
+                        this.grounded=true;
+
+                        if(!wasGrounded){
+
+                            this.scaleX=1.35;
+                            this.scaleY=.65;
+
+                            audio.play("land");
+                        }
+
+                        if(b.vx)
+                            this.x+=b.vx;
+
+                    }else if(this.vy>0){
+
+                        this.y=b.y-this.h;
+                        this.vy=0;
+                    }
+                }
+            }
+        }
+    }
+
+    intersects(b){
+
+        return(
+            this.x<b.x+b.w&&
+            this.x+this.w>b.x&&
+            this.y<b.y+b.h&&
+            this.y+this.h>b.y
+        );
+    }
+
+    draw(ctx,camX,camY){
+
+        if(this.isDead)return;
+
+        for(const t of this.trail){
+
+            ctx.save();
+
+            ctx.globalAlpha=t.alpha;
+
+            ctx.fillStyle="#00f0ff";
+
+            ctx.fillRect(
+                t.x-camX,
+                t.y-camY,
+                this.w,
+                this.h
+            );
+
+            ctx.restore();
+        }
+
+        ctx.save();
+
+        const cx=
+            this.x+
+            this.w/2-
+            camX;
+
+        const cy=
+            this.y+
+            this.h/2-
+            camY;
+
+        ctx.translate(cx,cy);
+
+        ctx.scale(
+            this.scaleX*this.facing,
+            this.scaleY
+        );
+
+        const bw=this.w;
+        const bh=this.h;
+
+        ctx.fillStyle="rgba(0,0,0,.35)";
+        ctx.fillRect(
+            -bw/2,
+            bh/2-2,
+            bw,
+            4
+        );
+
+        ctx.fillStyle=
+            this.isDashing?
+            "#ff0055":
+            "#00f0ff";
+
+        ctx.fillRect(
+            -bw/2,
+            -bh/2,
+            bw,
+            bh
+        );
+
+        ctx.fillStyle="#fff";
+
+        ctx.fillRect(
+            -bw/2+4,
+            -bh/2+4,
+            bw-8,
+            bh-8
+        );
+
+        ctx.fillStyle="#0b0c14";
+
+        ctx.fillRect(
+            2,
+            -bh/2+6,
+            4,
+            7
+        );
+
+        ctx.fillRect(
+            8,
+            -bh/2+6,
+            4,
+            7
+        );
+
+        ctx.restore();
+    }
+}
+
+
+/* ============================================================
+   PLATFORM
+============================================================ */
+
+class Platform{
+
+    constructor(x,y,w,h,options={}){
+
+        this.x=x;
+        this.y=y;
+        this.w=w;
+        this.h=h;
+
+        this.vx=0;
+        this.vy=0;
+
+        this.color=
+            options.color||"#1e2640";
+
+        this.borderColor=
+            options.borderColor||"#00f0ff";
+
+        this.isCollidable=
+            options.isCollidable!==undefined?
+            options.isCollidable:
+            true;
+
+        this.isFake=
+            options.isFake||false;
+
+        this.collapses=
+            options.collapses||false;
+
+        this.collapseTimer=0;
+        this.collapsed=false;
+
+        this.movePath=
+            options.movePath||null;
+
+        this.pathIdx=0;
+
+        this.visible=true;
+
+        this.disappears=
+            options.disappears||false;
+
+        this.disappearTimer=0;
+
+        this.rotation=
+            options.rotation||0;
+
+        this.rotSpeed=
+            options.rotSpeed||0;
+    }
+
+    update(dt,player,level){
+
+        if(this.rotSpeed!==0)
+            this.rotation+=this.rotSpeed*dt;
+
+        if(
+            this.movePath&&
+            this.movePath.length>0
+        ){
+
+            const target=
+                this.movePath[this.pathIdx];
+
+            const dx=
+                target.x-this.x;
+
+            const dy=
+                target.y-this.y;
+
+            const dist=
+                Math.hypot(dx,dy);
+
+            const spd=
+                (target.speed||120)*dt;
+
+            if(dist<spd){
+
+                this.vx=0;
+                this.vy=0;
+
+                this.x=target.x;
+                this.y=target.y;
+
+                this.pathIdx=
+                    (this.pathIdx+1)%
+                    this.movePath.length;
+
+            }else{
+
+                this.vx=
+                    dx/dist*target.speed;
+
+                this.vy=
+                    dy/dist*target.speed;
+
+                this.x+=this.vx*dt;
+                this.y+=this.vy*dt;
+            }
+        }
+
+        if(
+            this.collapses&&
+            !this.collapsed
+        ){
+
+            const standing=
+                player.x+player.w>this.x&&
+                player.x<this.x+this.w&&
+                Math.abs(
+                    player.y+player.h-this.y
+                )<5;
+
+            if(standing){
+
+                this.collapseTimer+=dt;
+
+                if(this.collapseTimer>.2){
+
+                    this.collapsed=true;
+                    this.isCollidable=false;
+                    this.visible=false;
+
+                    level.particles.spawn(
+                        this.x+this.w/2,
+                        this.y+this.h/2,
+                        14,
+                        "#ff0055",
+                        2.5
+                    );
+                }
+            }
+        }
+
+        if(this.disappears){
+
+            this.disappearTimer+=dt;
+
+            this.visible=
+                Math.floor(
+                    this.disappearTimer*2.5
+                )%2===0;
+
+            this.isCollidable=this.visible;
+        }
+    }
+
+    draw(ctx,camX,camY){
+
+        if(!this.visible)return;
+
+        ctx.save();
+
+        ctx.translate(
+            this.x-camX+this.w/2,
+            this.y-camY+this.h/2
+        );
+
+        if(this.rotation!==0)
+            ctx.rotate(this.rotation);
+
+        const rx=-this.w/2;
+        const ry=-this.h/2;
+
+        ctx.fillStyle=this.color;
+
+        ctx.fillRect(
+            rx,
+            ry,
+            this.w,
+            this.h
+        );
+
+        if(!this.isFake){
+
+            ctx.strokeStyle=this.borderColor;
+            ctx.lineWidth=2;
+
+            ctx.strokeRect(
+                rx,
+                ry,
+                this.w,
+                this.h
+            );
+
+            ctx.fillStyle=
+                "rgba(255,255,255,.12)";
+
+            ctx.fillRect(
+                rx,
+                ry,
+                this.w,
+                3
+            );
+        }
+
+        ctx.restore();
+    }
+}
+
+
+/* ============================================================
+   SPIKE
+============================================================ */
+
+class Spike{
+
+    constructor(x,y,w,h,direction="UP",options={}){
+
+        this.x=x;
+        this.y=y;
+
+        this.w=w;
+        this.h=h;
+
+        this.direction=direction;
+
+        this.hidden=
+            options.hidden||false;
+
+        this.moveOnTrigger=
+            options.moveOnTrigger||false;
+
+        this.targetX=
+            options.targetX!==undefined?
+            options.targetX:
+            x;
+
+        this.targetY=
+            options.targetY!==undefined?
+            options.targetY:
+            y;
+
+        this.speed=
+            options.speed||320;
+
+        this.vx=
+            options.vx||0;
+
+        this.vy=
+            options.vy||0;
+
+        this.autoMove=
+            options.autoMove||false;
+
+        this.startX=x;
+        this.startY=y;
+
+        this.rangeX=
+            options.rangeX||0;
+
+        this.rangeY=
+            options.rangeY||0;
+
+        this.time=0;
+    }
+
+    reveal(){
+        this.hidden=false;
+    }
+
+    update(dt,player,level){
+
+        this.time+=dt;
+
+        if(this.autoMove){
+
+            if(this.rangeX)
+                this.x=
+                    this.startX+
+                    Math.sin(this.time*this.speed/100)*
+                    this.rangeX;
+
+            if(this.rangeY)
+                this.y=
+                    this.startY+
+                    Math.sin(this.time*this.speed/100)*
+                    this.rangeY;
+        }
+
+        if(this.moveOnTrigger){
+
+            const dx=this.targetX-this.x;
+            const dy=this.targetY-this.y;
+
+            const dist=Math.hypot(dx,dy);
+
+            if(dist>1){
+
+                this.x+=
+                    dx/dist*
+                    this.speed*
+                    dt;
+
+                this.y+=
+                    dy/dist*
+                    this.speed*
+                    dt;
+            }
+        }
+
+        if(!this.hidden){
+
+            if(
+                player.x<this.x+this.w&&
+                player.x+player.w>this.x&&
+                player.y<this.y+this.h&&
+                player.y+player.h>this.y
+            ){
+
+                level.killPlayer(
+                    "Spike Trap!"
+                );
+            }
+        }
+    }
+
+    draw(ctx,camX,camY){
+
+        if(this.hidden)return;
+
+        ctx.save();
+
+        ctx.fillStyle="#ff0055";
+        ctx.strokeStyle="#ff99bb";
+        ctx.lineWidth=1;
+
+        const rx=this.x-camX;
+        const ry=this.y-camY;
+
+        const count=
+            Math.max(
+                1,
+                Math.floor(this.w/12)
+            );
+
+        const step=this.w/count;
+
+        ctx.beginPath();
+
+        if(this.direction==="UP"){
+
+            for(let i=0;i<count;i++){
+
+                ctx.moveTo(
+                    rx+i*step,
+                    ry+this.h
+                );
+
+                ctx.lineTo(
+                    rx+i*step+step/2,
+                    ry
+                );
+
+                ctx.lineTo(
+                    rx+(i+1)*step,
+                    ry+this.h
+                );
+            }
+
+        }else if(this.direction==="DOWN"){
+
+            for(let i=0;i<count;i++){
+
+                ctx.moveTo(
+                    rx+i*step,
+                    ry
+                );
+
+                ctx.lineTo(
+                    rx+i*step+step/2,
+                    ry+this.h
+                );
+
+                ctx.lineTo(
+                    rx+(i+1)*step,
+                    ry
+                );
+            }
+        }
+
+        ctx.closePath();
+
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+    }
+}
+
+
+/* ============================================================
+   TRIGGER
+============================================================ */
+
+class TriggerZone{
+
+    constructor(x,y,w,h,callback){
+
+        this.x=x;
+        this.y=y;
+
+        this.w=w;
+        this.h=h;
+
+        this.callback=callback;
+
+        this.activated=false;
+    }
+
+    update(player,level){
+
+        if(this.activated)return;
+
+        if(
+            player.x<this.x+this.w&&
+            player.x+player.w>this.x&&
+            player.y<this.y+this.h&&
+            player.y+player.h>this.y
+        ){
+
+            this.activated=true;
+
+            audio.play("trigger");
+
+            this.callback(level,player);
+        }
+    }
+}
+
+
+/* ============================================================
+   EXIT
+============================================================ */
+
+class ExitDoor{
+
+    constructor(x,y,isFake=false){
+
+        this.x=x;
+        this.y=y;
+
+        this.w=34;
+        this.h=50;
+
+        this.isFake=isFake;
+
+        this.vx=0;
+        this.vy=0;
+
+        this.minX=0;
+        this.maxX=960;
+    }
+
+    update(dt,player,level){
+
+        this.x+=this.vx*dt;
+        this.y+=this.vy*dt;
+
+        if(this.x<this.minX){
+
+            this.x=this.minX;
+            this.vx=0;
+        }
+
+        if(this.x+this.w>this.maxX){
+
+            this.x=this.maxX-this.w;
+            this.vx=0;
+        }
+
+        if(
+            player.x<this.x+this.w&&
+            player.x+player.w>this.x&&
+            player.y<this.y+this.h&&
+            player.y+player.h>this.y
+        ){
+
+            if(this.isFake)
+                level.killPlayer("Fake Door!");
+            else
+                level.completeLevel();
+        }
+    }
+
+    draw(ctx,camX,camY){
+
+        const rx=this.x-camX;
+        const ry=this.y-camY;
+
+        ctx.save();
+
+        ctx.fillStyle=
+            this.isFake?
+            "#ff0055":
+            "#ffcc00";
+
+        ctx.fillRect(
+            rx,
+            ry,
+            this.w,
+            this.h
+        );
+
+        ctx.fillStyle="#0b0c14";
+
+        ctx.fillRect(
+            rx+4,
+            ry+4,
+            this.w-8,
+            this.h-4
+        );
+
+        ctx.fillStyle=
+            this.isFake?
+            "#ff0055":
+            "#ffcc00";
+
+        ctx.fillRect(
+            rx+this.w-10,
+            ry+this.h/2-2,
+            5,
+            5
+        );
+
+        ctx.restore();
+    }
+}
+
+
+/* ============================================================
+   THEMES
+============================================================ */
+
+const Themes={
+
+    Lab:{
+        bg:"#080a12",
+        gridColor:"rgba(0,240,255,.08)",
+        style:"GRID"
+    },
+
+    Cave:{
+        bg:"#100a14",
+        gridColor:"rgba(255,0,85,.08)",
+        style:"GRID"
+    },
+
+    Factory:{
+        bg:"#12100a",
+        gridColor:"rgba(255,204,0,.08)",
+        style:"FACTORY"
+    },
+
+    Space:{
+        bg:"#05070e",
+        gridColor:"rgba(157,0,255,.08)",
+        style:"SPACE"
+    },
+
+    Nightmare:{
+        bg:"#08030a",
+        gridColor:"rgba(255,0,85,.13)",
+        style:"SPACE"
+    }
+};
+
+
+/* ============================================================
+   LEVEL CLASS
+============================================================ */
+
+class Level{
+
+    constructor(
+        id,
+        name,
+        theme,
+        width,
+        height,
+        builder,
+        hard=false
+    ){
+
+        this.id=id;
+        this.name=name;
+
+        this.theme=theme;
+
+        this.width=width;
+        this.height=height;
+
+        this.builder=builder;
+
+        this.hard=hard;
+
+        this.platforms=[];
+        this.spikes=[];
+        this.triggers=[];
+
+        this.exit=null;
+        this.realExit=null;
+
+        this.spawnX=60;
+        this.spawnY=100;
+
+        this.gravityInverted=false;
+
+        this.particles=
+            new ParticleSystem();
+
+        this.isCompleted=false;
+    }
+
+    init(){
+
+        this.platforms=[];
+        this.spikes=[];
+        this.triggers=[];
+
+        this.exit=null;
+        this.realExit=null;
+
+        this.gravityInverted=false;
+
+        this.isCompleted=false;
+
+        this.particles.clear();
+
+        this.builder(this);
+    }
+
+    getSolidBoxes(){
+
+        return this.platforms.filter(
+            p=>p.isCollidable&&!p.isFake
+        );
+    }
+
+    killPlayer(reason="Try Again"){
+
+        if(game.player.isDead)return;
+
+        game.player.isDead=true;
+
+        audio.play("death");
+
+        game.camera.shake(14,.4);
+
+        this.particles.spawn(
+            game.player.x+11,
+            game.player.y+14,
+            35,
+            "#ff0055",
+            4.5,
+            6
+        );
+
+        game.showDeathMessage(reason);
+    }
+
+    completeLevel(){
+
+        if(this.isCompleted)return;
+
+        this.isCompleted=true;
+
+        audio.play("win");
+
+        game.onLevelComplete();
+    }
+
+    update(dt,player){
+
+        this.particles.update(dt);
+
+        for(const p of this.platforms)
+            p.update(dt,player,this);
+
+        for(const s of this.spikes)
+            s.update(dt,player,this);
+
+        for(const t of this.triggers)
+            t.update(player,this);
+
+        if(this.exit)
+            this.exit.update(dt,player,this);
+
+        if(this.realExit)
+            this.realExit.update(dt,player,this);
+    }
+
+    drawBackground(ctx,camX,camY){
+
+        const backgroundImage=this.hard?
+            hardBackgroundImage:
+            easyBackgroundImage;
+
+        /* Draw the requested photographic background first.
+           If the image has not loaded yet, use the original theme. */
+        ctx.fillStyle=this.theme.bg;
+        ctx.fillRect(
+            0,
+            0,
+            game.canvas.width,
+            game.canvas.height
+        );
+
+        drawCoverImage(
+            ctx,
+            backgroundImage,
+            game.canvas.width,
+            game.canvas.height,
+            .82
+        );
+
+        /* Dark readability layer so platforms/player remain visible. */
+        ctx.fillStyle=this.hard?
+            "rgba(8,3,10,.34)":
+            "rgba(5,8,14,.25)";
+        ctx.fillRect(
+            0,
+            0,
+            game.canvas.width,
+            game.canvas.height
+        );
+
+        ctx.save();
+
+        ctx.strokeStyle=this.theme.gridColor;
+        ctx.lineWidth=1;
+
+        if(this.theme.style==="SPACE"){
+
+            ctx.fillStyle=
+                "rgba(255,255,255,.3)";
+
+            for(let i=0;i<55;i++){
+
+                let sx=
+                    (i*97-camX*.2)%
+                    game.canvas.width;
+
+                let sy=
+                    (i*131-camY*.2)%
+                    game.canvas.height;
+
+                if(sx<0)
+                    sx+=game.canvas.width;
+
+                if(sy<0)
+                    sy+=game.canvas.height;
+
+                ctx.fillRect(
+                    sx,
+                    sy,
+                    i%3+1,
+                    i%3+1
+                );
+            }
+
+        }else if(this.theme.style==="FACTORY"){
+
+            ctx.fillStyle=
+                "rgba(255,204,0,.03)";
+
+            for(let i=0;i<10;i++){
+
+                let px=
+                    (i*180-camX*.3)%
+                    (game.canvas.width+100);
+
+                ctx.fillRect(
+                    px,
+                    0,
+                    40,
+                    game.canvas.height
+                );
+            }
+
+        }else{
+
+            const gridSize=45;
+
+            const offsetX=
+                -camX*.25%gridSize;
+
+            const offsetY=
+                -camY*.25%gridSize;
+
+            ctx.beginPath();
+
+            for(
+                let x=offsetX;
+                x<game.canvas.width;
+                x+=gridSize
+            ){
+
+                ctx.moveTo(x,0);
+                ctx.lineTo(x,game.canvas.height);
+            }
+
+            for(
+                let y=offsetY;
+                y<game.canvas.height;
+                y+=gridSize
+            ){
+
+                ctx.moveTo(0,y);
+                ctx.lineTo(game.canvas.width,y);
+            }
+
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+
+    draw(ctx,camX,camY){
+
+        this.drawBackground(
+            ctx,
+            camX,
+            camY
+        );
+
+        for(const p of this.platforms)
+            p.draw(ctx,camX,camY);
+
+        for(const s of this.spikes)
+            s.draw(ctx,camX,camY);
+
+        if(this.exit)
+            this.exit.draw(ctx,camX,camY);
+
+        if(this.realExit)
+            this.realExit.draw(ctx,camX,camY);
+
+        this.particles.draw(
+            ctx,
+            camX,
+            camY
+        );
+    }
+}
+
+
+/* ============================================================
+   20 NORMAL LEVELS
+============================================================ */
+
+const LEVEL_REGISTRY=[
+
+/* 1 */
+new Level(1,"Path Begins",Themes.Lab,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,300,80)
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            340,460,180,80,
+            {collapses:true}
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(580,460,380,80)
+    );
+
+    lvl.exit=new ExitDoor(880,410);
+}),
+
+/* 2 */
+new Level(2,"Hidden Spikes",Themes.Cave,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,960,80)
+    );
+
+    const spike=new Spike(
+        400,430,90,30,
+        "UP",
+        {hidden:true}
+    );
+
+    lvl.spikes.push(spike);
+
+    lvl.triggers.push(
+        new TriggerZone(
+            320,350,50,100,
+            ()=>spike.reveal()
+        )
+    );
+
+    lvl.exit=new ExitDoor(880,410);
+}),
+
+/* 3 */
+new Level(3,"The Runaway Gate",Themes.Factory,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,960,80)
+    );
+
+    lvl.platforms.push(
+        new Platform(910,300,50,160)
+    );
+
+    lvl.exit=new ExitDoor(450,410);
+    lvl.exit.maxX=910;
+
+    lvl.triggers.push(
+        new TriggerZone(
+            360,350,40,100,
+            l=>{
+                l.exit.vx=210;
+            }
+        )
+    );
+}),
+
+/* 4 */
+new Level(4,"Vanishing Platforms",Themes.Space,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,200,80)
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            270,400,120,20,
+            {disappears:true}
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            470,340,120,20,
+            {disappears:true}
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(670,460,290,80)
+    );
+
+    lvl.exit=new ExitDoor(880,410);
+}),
+
+/* 5 */
+new Level(5,"Deadly Illusion",Themes.Lab,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,250,80)
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            310,460,160,80,
+            {
+                isFake:true,
+                color:"#ff0055"
+            }
+        )
+    );
+
+    lvl.spikes.push(
+        new Spike(310,510,160,30,"UP")
+    );
+
+    lvl.platforms.push(
+        new Platform(530,460,430,80)
+    );
+
+    lvl.exit=new ExitDoor(880,410);
+}),
+
+/* 6 */
+new Level(6,"The Falling Ceiling",Themes.Cave,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,960,80)
+    );
+
+    const roofSpike=new Spike(
+        440,-40,100,40,
+        "DOWN",
+        {
+            targetY:420,
+            speed:550
+        }
+    );
+
+    lvl.spikes.push(roofSpike);
+
+    lvl.triggers.push(
+        new TriggerZone(
+            370,350,40,100,
+            ()=>roofSpike.moveOnTrigger=true
+        )
+    );
+
+    lvl.exit=new ExitDoor(880,410);
+}),
+
+/* 7 */
+new Level(7,"Wall Climb",Themes.Factory,960,540,lvl=>{
+
+    lvl.spawnX=60;
+    lvl.spawnY=440;
+
+    lvl.platforms.push(
+        new Platform(0,480,180,60)
+    );
+
+    lvl.platforms.push(
+        new Platform(260,200,40,340)
+    );
+
+    lvl.platforms.push(
+        new Platform(480,480,480,60)
+    );
+
+    lvl.exit=new ExitDoor(880,430);
+}),
+
+/* 8 */
+new Level(8,"Gravity Reversal",Themes.Space,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,380,80)
+    );
+
+    lvl.platforms.push(
+        new Platform(0,0,960,50)
+    );
+
+    lvl.platforms.push(
+        new Platform(580,120,380,50)
+    );
+
+    lvl.triggers.push(
+        new TriggerZone(
+            300,350,40,100,
+            l=>l.gravityInverted=true
+        )
+    );
+
+    lvl.exit=new ExitDoor(880,170);
+}),
+
+/* 9 */
+new Level(9,"The False Target",Themes.Lab,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,960,80)
+    );
+
+    const fakeExit=
+        new ExitDoor(450,410,true);
+
+    lvl.platforms.push(
+        new Platform(
+            750,300,160,20,
+            {
+                color:"#202b46",
+                borderColor:"#ffcc00"
+            }
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            610,390,90,18,
+            {
+                color:"#18243b",
+                borderColor:"#00f0ff"
+            }
+        )
+    );
+
+    const realExit=
+        new ExitDoor(800,250,false);
+
+    lvl.exit=fakeExit;
+    lvl.realExit=realExit;
+}),
+
+/* 10 */
+new Level(10,"The Charging Wall",Themes.Cave,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,960,80)
+    );
+
+    const wall=new Platform(
+        900,100,60,360,
+        {
+            movePath:[
+                {
+                    x:900,
+                    y:100,
+                    speed:0
+                },
+                {
+                    x:420,
+                    y:100,
+                    speed:320
+                }
+            ]
+        }
+    );
+
+    lvl.platforms.push(wall);
+
+    lvl.triggers.push(
+        new TriggerZone(
+            300,350,40,100,
+            ()=>wall.pathIdx=1
+        )
+    );
+
+    lvl.exit=new ExitDoor(880,410);
+}),
+
+/* 11 */
+new Level(11,"Control Confusion",Themes.Space,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,960,80)
+    );
+
+    lvl.spikes.push(
+        new Spike(460,430,80,30,"UP")
+    );
+
+    lvl.triggers.push(
+        new TriggerZone(
+            300,350,40,100,
+            (l,p)=>p.controlsReversed=true
+        )
+    );
+
+    lvl.exit=new ExitDoor(880,410);
+}),
+
+/* 12 */
+new Level(12,"Dash Trial",Themes.Factory,960,540,lvl=>{
+
+    lvl.spawnX=50;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,160,80)
+    );
+
+    lvl.spikes.push(
+        new Spike(160,430,450,30,"UP")
+    );
+
+    lvl.platforms.push(
+        new Platform(200,390,90,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(325,335,95,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(455,370,95,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(555,330,70,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(650,460,310,80)
+    );
+
+    lvl.exit=new ExitDoor(880,410);
+}),
+
+/* 13 */
+new Level(13,"Dangerous Rotation",Themes.Lab,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,240,80)
+    );
+
+    lvl.platforms.push(
+        new Platform(315,390,90,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            450,300,180,20,
+            {rotSpeed:2.5}
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(650,380,90,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(700,460,260,80)
+    );
+
+    lvl.exit=new ExitDoor(880,410);
+}),
+
+/* 14 */
+new Level(14,"Chain Collapse",Themes.Cave,960,540,lvl=>{
+
+    lvl.spawnX=50;
+    lvl.spawnY=200;
+
+    lvl.platforms.push(
+        new Platform(0,250,140,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            180,300,100,20,
+            {collapses:true}
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            320,350,100,20,
+            {collapses:true}
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            460,400,100,20,
+            {collapses:true}
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(590,410,80,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(690,450,270,90)
+    );
+
+    lvl.exit=new ExitDoor(880,400);
+}),
+
+/* 15 */
+new Level(15,"The Unstable Grid",Themes.Space,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,200,80)
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            280,400,100,20,
+            {disappears:true}
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(430,350,80,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            520,320,100,20,
+            {disappears:true}
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(660,260,80,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(760,200,200,20)
+    );
+
+    lvl.exit=new ExitDoor(880,150);
+}),
+
+/* 16 */
+new Level(16,"Rising Danger",Themes.Factory,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=440;
+
+    lvl.platforms.push(
+        new Platform(0,480,200,60)
+    );
+
+    lvl.platforms.push(
+        new Platform(230,400,130,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(390,320,130,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(550,240,130,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(680,180,280,20)
+    );
+
+    const lava=new Spike(
+        0,530,960,40,
+        "UP",
+        {
+            moveOnTrigger:true,
+            targetY:190,
+            speed:50
+        }
+    );
+
+    lvl.spikes.push(lava);
+
+    lvl.exit=new ExitDoor(880,130);
+}),
+
+/* 17 */
+new Level(17,"The Combined Corridor",Themes.Cave,960,540,lvl=>{
+
+    lvl.spawnX=60;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,200,80)
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            230,460,120,80,
+            {
+                isFake:true,
+                color:"#ff0055"
+            }
+        )
+    );
+
+    lvl.spikes.push(
+        new Spike(230,510,120,30,"UP")
+    );
+
+    lvl.platforms.push(
+        new Platform(220,390,90,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(380,460,200,80)
+    );
+
+    const roof=new Spike(
+        430,-40,80,30,
+        "DOWN",
+        {
+            targetY:410,
+            speed:500
+        }
+    );
+
+    lvl.spikes.push(roof);
+
+    lvl.triggers.push(
+        new TriggerZone(
+            390,350,40,100,
+            ()=>roof.moveOnTrigger=true
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(560,390,80,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(640,460,320,80)
+    );
+
+    lvl.exit=new ExitDoor(880,410);
+}),
+
+/* 18 */
+new Level(18,"Spatial Deception",Themes.Space,960,540,lvl=>{
+
+    lvl.spawnX=80;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,960,80)
+    );
+
+    lvl.spikes.push(
+        new Spike(500,430,120,30,"UP")
+    );
+
+    lvl.triggers.push(
+        new TriggerZone(
+            320,350,40,100,
+            (l,p)=>{
+                p.x=680;
+                p.y=400;
+                p.vx=0;
+                p.vy=0;
+            }
+        )
+    );
+
+    lvl.exit=new ExitDoor(880,410);
+}),
+
+/* 19 */
+new Level(19,"Total Shift",Themes.Lab,960,540,lvl=>{
+
+    lvl.spawnX=60;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,200,80)
+    );
+
+    lvl.platforms.push(
+        new Platform(0,0,960,40)
+    );
+
+    const mp=new Platform(
+        250,460,140,20,
+        {
+            movePath:[
+                {
+                    x:250,
+                    y:460,
+                    speed:150
+                },
+                {
+                    x:430,
+                    y:460,
+                    speed:150
+                }
+            ]
+        }
+    );
+
+    lvl.platforms.push(mp);
+
+    lvl.triggers.push(
+        new TriggerZone(
+            400,350,40,100,
+            l=>l.gravityInverted=true
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(470,180,110,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(600,100,360,40)
+    );
+
+    lvl.exit=new ExitDoor(880,140);
+}),
+
+/* 20 */
+new Level(20,"The Final Confrontation",Themes.Factory,960,540,lvl=>{
+
+    lvl.spawnX=60;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,180,80)
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            220,400,100,20,
+            {collapses:true}
+        )
+    );
+
+    const mp=new Platform(
+        370,320,120,20,
+        {
+            movePath:[
+                {
+                    x:370,
+                    y:320,
+                    speed:110
+                },
+                {
+                    x:550,
+                    y:320,
+                    speed:110
+                }
+            ]
+        }
+    );
+
+    lvl.platforms.push(mp);
+
+    lvl.triggers.push(
+        new TriggerZone(
+            380,250,40,100,
+            (l,p)=>p.controlsReversed=true
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(570,380,80,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(700,460,260,80)
+    );
+
+    lvl.exit=new ExitDoor(880,410);
+})
+
+];
+
+
+/* ============================================================
+   10 HARD LEVELS — 21 TO 30
+============================================================ */
+
+const HARD_LEVELS=[
+
+/* =========================================================
+   21 — الباب الذي لا يجب لمسه
+========================================================= */
+
+new Level(
+21,
+"The False Start",
+Themes.Nightmare,
+960,
+540,
+lvl=>{
+
+    lvl.spawnX=60;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,180,80)
+    );
+
+    /* باب وهمي واضح في البداية */
+    lvl.exit=new ExitDoor(
+        180,
+        410,
+        true
+    );
+
+    /* المسار الحقيقي */
+    lvl.platforms.push(
+        new Platform(250,400,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(400,330,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(550,400,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(700,330,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(820,460,140,80)
+    );
+
+    /* أشواك تظهر بعد تجاوز الباب */
+    const hiddenSpikes=new Spike(
+        280,370,80,30,
+        "UP",
+        {hidden:true}
+    );
+
+    lvl.spikes.push(hiddenSpikes);
+
+    lvl.triggers.push(
+        new TriggerZone(
+            220,350,30,100,
+            ()=>{
+                hiddenSpikes.reveal()
+            }
+        )
+    );
+
+    /* الباب الحقيقي */
+    lvl.realExit=
+        new ExitDoor(
+            870,
+            410,
+            false
+        );
+}
+),
+
+
+/* =========================================================
+   22 — الجاذبية الكاذبة
+========================================================= */
+
+new Level(
+22,
+"Deceptive Gravity",
+Themes.Nightmare,
+960,
+540,
+lvl=>{
+
+    lvl.spawnX=60;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,220,80)
+    );
+
+    lvl.platforms.push(
+        new Platform(0,0,960,35)
+    );
+
+    lvl.platforms.push(
+        new Platform(300,390,110,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(450,320,110,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(620,250,110,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(760,180,200,20)
+    );
+
+    /* عند الاقتراب تقلب الجاذبية */
+    lvl.triggers.push(
+        new TriggerZone(
+            260,340,40,100,
+            l=>{
+                l.gravityInverted=true;
+            }
+        )
+    );
+
+    /* ثم تقلب مرة أخرى */
+    lvl.triggers.push(
+        new TriggerZone(
+            700,120,40,100,
+            l=>{
+                l.gravityInverted=false;
+            }
+        )
+    );
+
+    lvl.exit=new ExitDoor(
+        880,
+        410
+    );
+}
+),
+
+
+/* =========================================================
+   23 — The Moving Corridor
+========================================================= */
+
+new Level(
+23,
+"The Moving Corridor",
+Themes.Factory,
+960,
+540,
+lvl=>{
+
+    lvl.spawnX=50;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,150,80)
+    );
+
+    const p1=new Platform(
+        190,
+        420,
+        100,
+        20,
+        {
+            movePath:[
+                {
+                    x:190,
+                    y:420,
+                    speed:180
+                },
+                {
+                    x:350,
+                    y:350,
+                    speed:180
+                },
+                {
+                    x:500,
+                    y:420,
+                    speed:180
+                }
+            ]
+        }
+    );
+
+    const p2=new Platform(
+        580,
+        350,
+        100,
+        20,
+        {
+            movePath:[
+                {
+                    x:580,
+                    y:350,
+                    speed:210
+                },
+                {
+                    x:730,
+                    y:250,
+                    speed:210
+                },
+                {
+                    x:580,
+                    y:200,
+                    speed:210
+                }
+            ]
+        }
+    );
+
+    lvl.platforms.push(p1);
+    lvl.platforms.push(p2);
+
+    lvl.platforms.push(
+        new Platform(780,460,180,80)
+    );
+
+    /* أشواك متMove بين المنصات */
+    lvl.spikes.push(
+        new Spike(
+            390,
+            430,
+            100,
+            30,
+            "UP",
+            {
+                autoMove:true,
+                rangeY:80,
+                speed:180
+            }
+        )
+    );
+
+    lvl.exit=new ExitDoor(
+        880,
+        410
+    );
+}
+),
+
+
+/* =========================================================
+   24 — التحكم المنعكس مرتين
+========================================================= */
+
+new Level(
+24,
+"Triple Reversal",
+Themes.Space,
+960,
+540,
+lvl=>{
+
+    lvl.spawnX=60;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,170,80)
+    );
+
+    lvl.platforms.push(
+        new Platform(230,390,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(390,320,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(550,390,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(710,320,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(820,460,140,80)
+    );
+
+    lvl.spikes.push(
+        new Spike(
+            500,
+            430,
+            80,
+            30,
+            "UP"
+        )
+    );
+
+    /* العكس الorل */
+    lvl.triggers.push(
+        new TriggerZone(
+            200,330,35,100,
+            (l,p)=>{
+                p.controlsReversed=true;
+            }
+        )
+    );
+
+    /* العكس الثاني يعيد التحكم */
+    lvl.triggers.push(
+        new TriggerZone(
+            630,300,35,100,
+            (l,p)=>{
+                p.controlsReversed=false;
+            }
+        )
+    );
+
+    /* العكس الثالث قبل Completion */
+    lvl.triggers.push(
+        new TriggerZone(
+            790,350,25,100,
+            (l,p)=>{
+                p.controlsReversed=true;
+            }
+        )
+    );
+
+    lvl.exit=new ExitDoor(
+        870,
+        410
+    );
+}
+),
+
+
+/* =========================================================
+   25 — المنصة التي تخونك
+========================================================= */
+
+new Level(
+25,
+"The Betraying Platform",
+Themes.Nightmare,
+960,
+540,
+lvl=>{
+
+    lvl.spawnX=50;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,150,80)
+    );
+
+    /* منصة تبدو طبيعية لكنها تنهار */
+    lvl.platforms.push(
+        new Platform(
+            190,
+            410,
+            120,
+            20,
+            {
+                collapses:true
+            }
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            350,
+            350,
+            100,
+            20,
+            {
+                disappears:true
+            }
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            490,
+            290,
+            100,
+            20
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            630,
+            350,
+            100,
+            20,
+            {
+                collapses:true
+            }
+        )
+    );
+
+    lvl.platforms.push(
+        new Platform(
+            780,
+            460,
+            180,
+            80
+        )
+    );
+
+    /* فخ مخفي أسفل منصة */
+    lvl.spikes.push(
+        new Spike(
+            360,
+            380,
+            80,
+            25,
+            "UP",
+            {hidden:true}
+        )
+    );
+
+    lvl.triggers.push(
+        new TriggerZone(
+            330,
+            320,
+            30,
+            80,
+            ()=>{
+                /* المنصة تختفي ثم تظهر الخطر */
+            }
+        )
+    );
+
+    lvl.exit=new ExitDoor(
+        880,
+        410
+    );
+}
+),
+
+
+/* =========================================================
+   26 — مطاردة الباب الحقيقي — FIXED
+========================================================= */
+
+new Level(
+    26,
+    "The Runaway Door",
+    Themes.Factory,
+    960,
+    540,
+    lvl=>{
+        lvl.spawnX=50;
+        lvl.spawnY=400;
+
+        lvl.platforms.push(
+            new Platform(0,460,960,80)
+        );
+
+        /*
+          FIX: the old version put the real door directly against a
+          blocking wall at x=600 while its movement limit also forced
+          it to stop there. That made the door appear stuck/inaccessible.
+          The real door now stops in an open, reachable area.
+        */
+        const fake1=new ExitDoor(300,410,true);
+        const fake2=new ExitDoor(540,410,true);
+        const real=new ExitDoor(720,410,false);
+
+        lvl.exit=fake1;
+        lvl.realExit=real;
+
+        /* Fake door #1 flees to the right when approached. */
+        lvl.triggers.push(
+            new TriggerZone(
+                240,350,30,100,
+                ()=>{
+                    fake1.vx=250;
+                }
+            )
+        );
+
+        /* Fake door #2 also flees when approached. */
+        lvl.triggers.push(
+            new TriggerZone(
+                450,350,30,100,
+                ()=>{
+                    fake2.vx=280;
+                }
+            )
+        );
+
+        /*
+          FIXED REAL DOOR:
+          - starts at x=720
+          - moves left
+          - stops at x=700, which is fully reachable
+          - no solid wall blocks the player from reaching it
+        */
+        real.vx=-100;
+        real.minX=700;
+        real.maxX=900;
+
+        /* Keep the floor unobstructed so the player can actually touch the door. */
+    }
+),
+
+
+/* =========================================================
+   27 — The Inverted Room
+========================================================= */
+
+new Level(
+27,
+"The Inverted Room",
+Themes.Nightmare,
+960,
+540,
+lvl=>{
+
+    lvl.spawnX=50;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,180,80)
+    );
+
+    lvl.platforms.push(
+        new Platform(250,420,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(400,350,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(550,280,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(700,200,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(820,100,140,20)
+    );
+
+    /* جاذبية عكسية */
+    lvl.triggers.push(
+        new TriggerZone(
+            200,350,30,100,
+            l=>{
+                l.gravityInverted=true;
+            }
+        )
+    );
+
+    /* منصة سقفية */
+    lvl.platforms.push(
+        new Platform(600,0,360,35)
+    );
+
+    /* أشواك تتحرك عندما يقترب اللاعب */
+    const spike=new Spike(
+        450,
+        80,
+        120,
+        30,
+        "DOWN",
+        {
+            hidden:true,
+            targetY:200,
+            speed:420
+        }
+    );
+
+    lvl.spikes.push(spike);
+
+    lvl.triggers.push(
+        new TriggerZone(
+            500,180,40,100,
+            ()=>{
+                spike.hidden=false;
+                spike.moveOnTrigger=true;
+            }
+        )
+    );
+
+    lvl.exit=new ExitDoor(
+        870,
+        50
+    );
+}
+),
+
+
+/* =========================================================
+   28 — المتاهة المستحيلة
+========================================================= */
+
+new Level(
+28,
+"The False Maze",
+Themes.Space,
+960,
+540,
+lvl=>{
+
+    lvl.spawnX=50;
+    lvl.spawnY=400;
+
+    lvl.platforms.push(
+        new Platform(0,460,150,80)
+    );
+
+    /* المسار الرئيسي */
+    lvl.platforms.push(
+        new Platform(200,400,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(350,300,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(500,400,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(650,300,100,20)
+    );
+
+    lvl.platforms.push(
+        new Platform(800,460,160,80)
+    );
+
+    /* جدران تغير المسار */
+    lvl.platforms.push(
+        new Platform(300,250,30,210)
+    );
+
+    lvl.platforms.push(
+        new Platform(600,180,30,280)
+    );
+
+    /* أشواك خفية */
+    lvl.spikes.push(
+        new Spike(
+            210,
+            370,
+            90,
+            30,
+            "UP",
+            {hidden:true}
+        )
+    );
+
+    lvl.spikes.push(
+        new Spike(
+            500,
+            370,
+            100,
+            30,
+            "UP",
+            {hidden:true}
+        )
+    );
+
+    /* عند دخول المتاهة تظهر الأشواك */
+    lvl.triggers.push(
+        new TriggerZone(
+            180,350,30,100,
+            ()=>{
+                lvl.spikes[0].reveal();
+            }
+        )
+    );
+
+    lvl.triggers.push(
+        new TriggerZone(
+            470,350,30,100,
+            ()=>{
+                lvl.spikes[1].reveal();
+            }
+        )
+    );
+
+    /* بوابة وهمية في Completion */
+    lvl.exit=
+        new ExitDoor(
+            800,
+            410,
+            true
+        );
+
+    lvl.realExit=
+        new ExitDoor(
+            870,
+            410,
+            false
+        );
+}
+),
+
+
+/* =========================================================
+   29 — كل شيء ضدك
+========================================================= */
+
+new Level(
+29,
+"Total Collapse",
+Themes.Nightmare,
+960,
+540,
+lvl=>{
+
+    /* =====================================================
+       LEVEL 29 — REBUILT
+       Industrial / ruined hard-mode arena.
+       The previous version could become unwinnable because
+       gravity stayed inverted near the exit. Gravity is now
+       restored before the final door.
+    ===================================================== */
+
+    lvl.spawnX=40;
+    lvl.spawnY=400;
+
+    const metal="#202735";
+    const metalDark="#121722";
+    const steel="#30394a";
+    const hazard="#ff0055";
+    const edge="#ff3b70";
+
+    /* Starting floor */
+    lvl.platforms.push(
+        new Platform(0,460,135,80,{
+            color:metalDark,
+            borderColor:edge
+        })
+    );
+
+    /* Collapsing service platform */
+    lvl.platforms.push(
+        new Platform(165,410,95,20,{
+            collapses:true,
+            color:metal,
+            borderColor:edge
+        })
+    );
+
+    /* Flickering platform */
+    lvl.platforms.push(
+        new Platform(300,350,95,20,{
+            disappears:true,
+            color:steel,
+            borderColor:edge
+        })
+    );
+
+    /* Lower emergency platform so the route remains readable */
+    lvl.platforms.push(
+        new Platform(300,435,90,18,{
+            color:metalDark,
+            borderColor:"#6b7280"
+        })
+    );
+
+    /* Moving industrial platform */
+    const moving=new Platform(
+        430,300,105,20,{
+            color:metal,
+            borderColor:edge,
+            movePath:[
+                {x:430,y:300,speed:190},
+                {x:545,y:230,speed:190},
+                {x:655,y:310,speed:190},
+                {x:545,y:370,speed:190}
+            ]
+        }
+    );
+    lvl.platforms.push(moving);
+
+    /* Upper route */
+    lvl.platforms.push(
+        new Platform(705,255,100,20,{
+            color:steel,
+            borderColor:edge
+        })
+    );
+
+    /* Final ground */
+    lvl.platforms.push(
+        new Platform(815,460,145,80,{
+            color:metalDark,
+            borderColor:edge
+        })
+    );
+
+    /* Industrial support columns */
+    lvl.platforms.push(
+        new Platform(390,385,28,155,{
+            color:metalDark,
+            borderColor:"#4b5563"
+        })
+    );
+
+    lvl.platforms.push(
+        new Platform(805,325,28,135,{
+            color:metalDark,
+            borderColor:"#4b5563"
+        })
+    );
+
+    /* =====================================================
+       MOVING FLOOR HAZARD
+    ===================================================== */
+    lvl.spikes.push(
+        new Spike(
+            225,430,100,30,"UP",{
+                autoMove:true,
+                rangeX:60,
+                speed:210
+            }
+        )
+    );
+
+    /* =====================================================
+       INDUSTRIAL CRUSHER
+       It only activates once, then stops at a safe height.
+    ===================================================== */
+    const crusher=new Spike(
+        585,-55,95,45,"DOWN",{
+            targetY:325,
+            speed:620
+        }
+    );
+    lvl.spikes.push(crusher);
+
+    let crusherTriggered=false;
+
+    lvl.triggers.push(
+        new TriggerZone(
+            500,240,35,120,
+            ()=>{
+                if(crusherTriggered)return;
+                crusherTriggered=true;
+                crusher.moveOnTrigger=true;
+            }
+        )
+    );
+
+    /* =====================================================
+       FAKE GRAVITY SECTION
+       Invert gravity briefly, then ALWAYS restore it before
+       the final platform and door.
+    ===================================================== */
+    let gravityTrapUsed=false;
+
+    lvl.triggers.push(
+        new TriggerZone(
+            665,175,35,120,
+            l=>{
+                if(gravityTrapUsed)return;
+                gravityTrapUsed=true;
+                l.gravityInverted=true;
+            }
+        )
+    );
+
+    /* Critical fix: restore normal gravity before the exit. */
+    lvl.triggers.push(
+        new TriggerZone(
+            775,300,35,160,
+            l=>{
+                l.gravityInverted=false;
+            }
+        )
+    );
+
+    /* =====================================================
+       FINAL SAFETY PLATFORM
+       Gives the player a clear landing area after gravity
+       returns to normal.
+    ===================================================== */
+    lvl.platforms.push(
+        new Platform(750,390,65,20,{
+            color:metal,
+            borderColor:edge
+        })
+    );
+
+    /* =====================================================
+       REAL EXIT
+    ===================================================== */
+    lvl.exit=new ExitDoor(875,410,false);
+
+    /* Keep the exit firmly inside the final area. */
+    lvl.exit.minX=840;
+    lvl.exit.maxX=960;
+}
+),
+
+/* =========================================================
+   30 — Completion الحقيقية
+========================================================= */
+
+new Level(
+30,
+"Pro Hell",
+Themes.Nightmare,
+960,
+540,
+lvl=>{
+
+    lvl.spawnX=40;
+    lvl.spawnY=400;
+
+    /* البداية */
+    lvl.platforms.push(
+        new Platform(
+            0,
+            460,
+            130,
+            80
+        )
+    );
+
+    /* منصة تنهار */
+    lvl.platforms.push(
+        new Platform(
+            160,
+            410,
+            90,
+            20,
+            {
+                collapses:true
+            }
+        )
+    );
+
+    /* منصة تختفي */
+    lvl.platforms.push(
+        new Platform(
+            290,
+            350,
+            90,
+            20,
+            {
+                disappears:true
+            }
+        )
+    );
+
+    /* منصة متMove */
+    const moving=new Platform(
+        420,
+        300,
+        100,
+        20,
+        {
+            movePath:[
+                {
+                    x:420,
+                    y:300,
+                    speed:180
+                },
+                {
+                    x:550,
+                    y:220,
+                    speed:180
+                },
+                {
+                    x:640,
+                    y:320,
+                    speed:180
+                }
+            ]
+        }
+    );
+
+    lvl.platforms.push(moving);
+
+    /* منصة عادية */
+    lvl.platforms.push(
+        new Platform(
+            690,
+            250,
+            80,
+            20
+        )
+    );
+
+    /* منصة Completion */
+    lvl.platforms.push(
+        new Platform(
+            820,
+            460,
+            140,
+            80
+        )
+    );
+
+    /* =====================================================
+       الفخ الorل: أشواك متMove
+    ===================================================== */
+
+    lvl.spikes.push(
+        new Spike(
+            230,
+            430,
+            100,
+            30,
+            "UP",
+            {
+                autoMove:true,
+                rangeX:65,
+                speed:250
+            }
+        )
+    );
+
+    /* =====================================================
+       الفخ الثاني: سقف ساقط
+    ===================================================== */
+
+    const crusher=new Spike(
+        390,
+        -50,
+        90,
+        40,
+        "DOWN",
+        {
+            targetY:360,
+            speed:650
+        }
+    );
+
+    lvl.spikes.push(crusher);
+
+    lvl.triggers.push(
+        new TriggerZone(
+            350,
+            280,
+            30,
+            100,
+            ()=>{
+                crusher.moveOnTrigger=true;
+            }
+        )
+    );
+
+    /* =====================================================
+       الفخ الثالث: عكس التحكم
+    ===================================================== */
+
+    lvl.triggers.push(
+        new TriggerZone(
+            500,
+            180,
+            30,
+            100,
+            (l,p)=>{
+                p.controlsReversed=true;
+            }
+        )
+    );
+
+    /* =====================================================
+       الفخ الرابع: جاذبية معكوسة
+    ===================================================== */
+
+    lvl.triggers.push(
+        new TriggerZone(
+            630,
+            180,
+            30,
+            100,
+            l=>{
+                l.gravityInverted=true;
+            }
+        )
+    );
+
+    /* =====================================================
+       الفخ الخامس: أشواك مخفية
+    ===================================================== */
+
+    const hidden=new Spike(
+        700,
+        220,
+        80,
+        30,
+        "UP",
+        {
+            hidden:true
+        }
+    );
+
+    lvl.spikes.push(hidden);
+
+    lvl.triggers.push(
+        new TriggerZone(
+            670,
+            150,
+            30,
+            100,
+            ()=>{
+                hidden.reveal();
+            }
+        )
+    );
+
+    /* =====================================================
+       الفخ السادس: Restart الجاذبية
+    ===================================================== */
+
+    lvl.triggers.push(
+        new TriggerZone(
+            760,
+            300,
+            30,
+            100,
+            l=>{
+                l.gravityInverted=false;
+            }
+        )
+    );
+
+    /* =====================================================
+       باب وهمي
+    ===================================================== */
+
+    lvl.exit=
+        new ExitDoor(
+            820,
+            410,
+            true
+        );
+
+    /* =====================================================
+       الباب الحقيقي يتحرك
+    ===================================================== */
+
+    lvl.realExit=
+        new ExitDoor(
+            900,
+            410,
+            false
+        );
+
+    lvl.realExit.minX=780;
+    lvl.realExit.maxX=930;
+
+    lvl.realExit.vx=-160;
+
+    /* حاجز يجعل الطريق يحتاج Dash */
+    lvl.platforms.push(
+        new Platform(
+            780,
+            350,
+            30,
+            110
+        )
+    );
+},
+true
+)
+
+,
+/* =========================================================
+   31 — THE FLOOR IS LYING
+========================================================= */
+new Level(
+31,
+"The Floor Is Lying",
+Themes.Nightmare,
+1200,
+540,
+lvl=>{
+    lvl.spawnX=40; lvl.spawnY=400;
+    lvl.platforms.push(new Platform(0,460,170,80));
+    lvl.platforms.push(new Platform(230,420,110,20,{collapses:true}));
+    lvl.platforms.push(new Platform(390,360,110,20));
+    lvl.platforms.push(new Platform(550,420,100,20,{disappears:true}));
+    lvl.platforms.push(new Platform(700,350,120,20,{collapses:true}));
+    lvl.platforms.push(new Platform(870,420,100,20));
+    lvl.platforms.push(new Platform(1010,460,190,80));
+    lvl.spikes.push(new Spike(335,430,55,30,"UP"));
+    lvl.spikes.push(new Spike(500,330,50,30,"UP",{hidden:true}));
+    lvl.triggers.push(new TriggerZone(470,300,25,120,(l)=>l.spikes[1].reveal()));
+    lvl.exit=new ExitDoor(1130,410);
+}
+),
+
+/* =========================================================
+   32 — DON'T TRUST THE EXIT
+========================================================= */
+new Level(
+32,
+"Don't Trust the Exit",
+Themes.Nightmare,
+1200,
+540,
+lvl=>{
+    lvl.spawnX=40; lvl.spawnY=400;
+    lvl.platforms.push(new Platform(0,460,180,80));
+    lvl.platforms.push(new Platform(240,400,110,20));
+    lvl.platforms.push(new Platform(400,330,110,20));
+    lvl.platforms.push(new Platform(560,400,110,20));
+    lvl.platforms.push(new Platform(720,330,110,20));
+    lvl.platforms.push(new Platform(880,400,120,20));
+    lvl.platforms.push(new Platform(1040,460,160,80));
+    lvl.exit=new ExitDoor(240,350,true);
+    const fake2=new ExitDoor(560,350,true);
+    const fake3=new ExitDoor(720,280,true);
+    lvl.triggers.push(new TriggerZone(100,360,25,100,(l)=>{ fake2.vx=120; }));
+    lvl.realExit=new ExitDoor(1120,410,false);
+    lvl.spikes.push(new Spike(350,430,50,30,"UP"));
+    lvl.spikes.push(new Spike(830,430,50,30,"UP"));
+}
+),
+
+/* =========================================================
+   33 — GRAVITY FAILURE
+========================================================= */
+new Level(
+33,
+"Gravity Failure",
+Themes.Nightmare,
+1200,
+540,
+lvl=>{
+    lvl.spawnX=40; lvl.spawnY=400;
+    lvl.platforms.push(new Platform(0,460,170,80));
+    lvl.platforms.push(new Platform(220,400,100,20));
+    lvl.platforms.push(new Platform(370,300,100,20));
+    lvl.platforms.push(new Platform(520,180,110,20));
+    lvl.platforms.push(new Platform(680,300,100,20));
+    lvl.platforms.push(new Platform(830,400,100,20));
+    lvl.platforms.push(new Platform(990,460,210,80));
+    lvl.triggers.push(new TriggerZone(330,300,30,120,(l)=>l.gravityInverted=true));
+    lvl.triggers.push(new TriggerZone(760,250,30,140,(l)=>l.gravityInverted=false));
+    lvl.spikes.push(new Spike(470,330,50,30,"UP"));
+    lvl.spikes.push(new Spike(780,430,50,30,"UP"));
+    lvl.exit=new ExitDoor(1110,410);
+}
+),
+
+/* =========================================================
+   34 — THE MOVING WORLD
+========================================================= */
+new Level(
+34,
+"The Moving World",
+Themes.Factory,
+1300,
+540,
+lvl=>{
+    lvl.spawnX=40; lvl.spawnY=400;
+    lvl.platforms.push(new Platform(0,460,150,80));
+    lvl.platforms.push(new Platform(1120,460,180,80));
+    lvl.platforms.push(new Platform(180,410,100,20,{movePath:[
+        {x:180,y:410,speed:170},{x:350,y:320,speed:170},{x:520,y:410,speed:170}
+    ]}));
+    lvl.platforms.push(new Platform(600,330,100,20,{movePath:[
+        {x:600,y:330,speed:190},{x:780,y:230,speed:190},{x:920,y:330,speed:190}
+    ]}));
+    lvl.spikes.push(new Spike(350,430,90,30,"UP",{autoMove:true,rangeY:70,speed:170}));
+    lvl.spikes.push(new Spike(820,420,70,30,"UP",{autoMove:true,rangeY:90,speed:150}));
+    lvl.exit=new ExitDoor(1210,410);
+}
+),
+
+/* =========================================================
+   35 — THE TRAP CHAIN
+========================================================= */
+new Level(
+35,
+"The Trap Chain",
+Themes.Factory,
+1200,
+540,
+lvl=>{
+    lvl.spawnX=40; lvl.spawnY=400;
+    lvl.platforms.push(new Platform(0,460,180,80));
+    lvl.platforms.push(new Platform(240,410,100,20));
+    lvl.platforms.push(new Platform(390,410,100,20));
+    lvl.platforms.push(new Platform(540,350,110,20,{disappears:true}));
+    lvl.platforms.push(new Platform(700,410,100,20));
+    lvl.platforms.push(new Platform(860,350,110,20));
+    lvl.platforms.push(new Platform(1010,460,190,80));
+    const chainSpike=new Spike(470,430,70,30,"UP",{hidden:true});
+    lvl.spikes.push(chainSpike);
+    lvl.triggers.push(new TriggerZone(210,350,30,100,(l,p)=>{
+        chainSpike.reveal();
+        audio.play("trigger");
+    }));
+    lvl.triggers.push(new TriggerZone(650,300,30,120,(l)=>{
+        l.platforms[3].disappears=false;
+        l.platforms[3].visible=false;
+        l.platforms[3].isCollidable=false;
+    }));
+    lvl.triggers.push(new TriggerZone(820,300,30,120,(l)=>{
+        l.platforms[6].isCollidable=true;
+    }));
+    lvl.exit=new ExitDoor(1110,410);
+}
+),
+
+/* =========================================================
+   36 — THE DARK ROOM
+========================================================= */
+new Level(
+36,
+"The Dark Room",
+Themes.Nightmare,
+1200,
+540,
+lvl=>{
+    lvl.spawnX=40; lvl.spawnY=400;
+    lvl.platforms.push(new Platform(0,460,160,80));
+    lvl.platforms.push(new Platform(220,410,100,20));
+    lvl.platforms.push(new Platform(370,350,90,20));
+    lvl.platforms.push(new Platform(510,410,100,20));
+    lvl.platforms.push(new Platform(660,330,100,20));
+    lvl.platforms.push(new Platform(810,410,100,20));
+    lvl.platforms.push(new Platform(960,460,240,80));
+    lvl.spikes.push(new Spike(320,430,50,30,"UP",{hidden:true}));
+    lvl.spikes.push(new Spike(610,430,50,30,"UP",{hidden:true}));
+    lvl.spikes.push(new Spike(910,430,50,30,"UP"));
+    lvl.triggers.push(new TriggerZone(190,350,25,100,(l)=>l.spikes[0].reveal()));
+    lvl.triggers.push(new TriggerZone(590,350,25,100,(l)=>l.spikes[1].reveal()));
+    lvl.exit=new ExitDoor(1100,410);
+}
+),
+
+/* =========================================================
+   37 — THE FAKE SAFE ZONE
+========================================================= */
+new Level(
+37,
+"The Fake Safe Zone",
+Themes.Nightmare,
+1200,
+540,
+lvl=>{
+    lvl.spawnX=40; lvl.spawnY=400;
+    lvl.platforms.push(new Platform(0,460,170,80));
+    lvl.platforms.push(new Platform(230,410,120,20,{collapses:true}));
+    lvl.platforms.push(new Platform(400,350,120,20));
+    lvl.platforms.push(new Platform(570,410,120,20,{collapses:true}));
+    lvl.platforms.push(new Platform(740,350,120,20));
+    lvl.platforms.push(new Platform(910,410,100,20));
+    lvl.platforms.push(new Platform(1040,460,160,80));
+    lvl.spikes.push(new Spike(350,430,50,30,"UP"));
+    lvl.spikes.push(new Spike(690,430,50,30,"UP"));
+    lvl.exit=new ExitDoor(1120,410);
+}
+),
+
+/* =========================================================
+   38 — COLLAPSE
+========================================================= */
+new Level(
+38,
+"Collapse",
+Themes.Factory,
+1300,
+540,
+lvl=>{
+    lvl.spawnX=40; lvl.spawnY=400;
+    lvl.platforms.push(new Platform(0,460,150,80));
+    for(let i=0;i<6;i++){
+        lvl.platforms.push(new Platform(190+i*150,420-(i%2)*55,100,20,{
+            collapses:true
+        }));
+    }
+    lvl.platforms.push(new Platform(1090,460,210,80));
+    lvl.spikes.push(new Spike(330,430,50,30,"UP"));
+    lvl.spikes.push(new Spike(630,430,50,30,"UP"));
+    lvl.spikes.push(new Spike(930,430,50,30,"UP"));
+    lvl.exit=new ExitDoor(1210,410);
+}
+),
+
+/* =========================================================
+   39 — THE ESCAPE
+========================================================= */
+new Level(
+39,
+"The Escape",
+Themes.Factory,
+1500,
+540,
+lvl=>{
+    lvl.spawnX=40; lvl.spawnY=400;
+    lvl.platforms.push(new Platform(0,460,160,80));
+    lvl.platforms.push(new Platform(190,410,110,20,{collapses:true}));
+    lvl.platforms.push(new Platform(340,360,110,20,{collapses:true}));
+    lvl.platforms.push(new Platform(490,410,110,20,{collapses:true}));
+    lvl.platforms.push(new Platform(640,350,110,20,{collapses:true}));
+    lvl.platforms.push(new Platform(790,410,110,20,{collapses:true}));
+    lvl.platforms.push(new Platform(940,330,110,20,{collapses:true}));
+    lvl.platforms.push(new Platform(1090,390,110,20,{collapses:true}));
+    lvl.platforms.push(new Platform(1240,460,260,80));
+    lvl.spikes.push(new Spike(300,430,40,30,"UP",{autoMove:true,rangeY:55,speed:180}));
+    lvl.spikes.push(new Spike(600,430,40,30,"UP",{autoMove:true,rangeY:70,speed:190}));
+    lvl.spikes.push(new Spike(900,430,40,30,"UP",{autoMove:true,rangeY:65,speed:200}));
+    lvl.spikes.push(new Spike(1180,430,40,30,"UP",{autoMove:true,rangeY:80,speed:210}));
+    lvl.exit=new ExitDoor(1400,410);
+}
+),
+
+/* =========================================================
+   40 — NIGHTMARE
+========================================================= */
+new Level(
+40,
+"Nightmare",
+Themes.Nightmare,
+1600,
+540,
+lvl=>{
+    lvl.spawnX=40; lvl.spawnY=400;
+    lvl.platforms.push(new Platform(0,460,150,80));
+    lvl.platforms.push(new Platform(190,410,100,20,{collapses:true}));
+    lvl.platforms.push(new Platform(330,350,100,20));
+    lvl.platforms.push(new Platform(470,410,90,20,{disappears:true}));
+    lvl.platforms.push(new Platform(610,300,100,20));
+    lvl.platforms.push(new Platform(750,220,100,20));
+    lvl.platforms.push(new Platform(890,320,100,20,{movePath:[
+        {x:890,y:320,speed:170},{x:1040,y:240,speed:170},{x:1180,y:320,speed:170}
+    ]}));
+    lvl.platforms.push(new Platform(1250,400,100,20,{collapses:true}));
+    lvl.platforms.push(new Platform(1410,460,190,80));
+    lvl.spikes.push(new Spike(285,430,45,30,"UP",{hidden:true}));
+    lvl.spikes.push(new Spike(560,430,45,30,"UP"));
+    lvl.spikes.push(new Spike(700,330,45,30,"UP",{autoMove:true,rangeY:45,speed:180}));
+    lvl.spikes.push(new Spike(1020,350,50,30,"UP"));
+    lvl.spikes.push(new Spike(1345,430,50,30,"UP"));
+    lvl.triggers.push(new TriggerZone(150,350,25,100,(l)=>l.spikes[0].reveal()));
+    lvl.triggers.push(new TriggerZone(575,260,25,140,(l)=>l.gravityInverted=true));
+    lvl.triggers.push(new TriggerZone(1120,180,25,180,(l)=>l.gravityInverted=false));
+    lvl.triggers.push(new TriggerZone(1180,260,25,120,(l)=>{
+        if(l.exit) l.exit.x=1320;
+    }));
+    lvl.exit=new ExitDoor(1520,410);
+}
+)
+];
+
+
+/* ============================================================
+   GAME ENGINE
+============================================================ */
+
+class GameEngine{
+
+    constructor(){
+
+        this.canvas=
+            document.getElementById(
+                "gameCanvas"
+            );
+
+        this.ctx=
+            this.canvas.getContext("2d");
+
+        this.camera=
+            new Camera(960,540);
+
+        this.player=
+            new Player(0,0);
+
+        this.currentLevelIdx=0;
+        this.currentLevel=null;
+
+        this.isHardMode=false;
+
+        this.state="MENU";
+
+        this.keys={};
+
+        this.levelTime=0;
+        this.levelDeaths=0;
+
+        this.lastTime=0;
+
+        this.winNextIsHard=false;
+
+        this.bindEvents();
+
+        this.buildLevelGrid();
+        this.buildHardLevelGrid();
+
+        this.updateHardButton();
+
+        this.updateHUD();
+    }
+
+
+    /* ========================================================
+       EVENTS
+    ======================================================== */
+
+    bindEvents(){
+
+        window.addEventListener(
+            "keydown",
+            e=>{
+
+                this.keys[e.code]=true;
+
+                audio.init();
+
+                if(
+                    e.code==="KeyR"&&
+                    this.state==="PLAYING"
+                )
+                    this.restartLevel();
+
+                if(
+                    e.code==="Escape"&&
+                    (
+                        this.state==="PLAYING"||
+                        this.state==="PAUSED"
+                    )
+                )
+                    this.togglePause();
+            }
+        );
+
+        window.addEventListener(
+            "keyup",
+            e=>{
+                this.keys[e.code]=false;
+            }
+        );
+
+
+        document.getElementById(
+            "btn-start"
+        ).onclick=()=>{
+
+            audio.play("click");
+
+            const idx=
+                Math.max(
+                    0,
+                    Math.min(
+                        saveData.unlocked-1,
+                        LEVEL_REGISTRY.length-1
+                    )
+                );
+
+            this.startNormalLevel(idx);
+        };
+
+
+        document.getElementById(
+            "btn-levels"
+        ).onclick=()=>{
+
+            audio.play("click");
+
+            this.buildLevelGrid();
+
+            this.showOverlay(
+                "menu-levels"
+            );
+        };
+
+
+        document.getElementById(
+            "btn-hard-menu"
+        ).onclick=()=>{
+
+            audio.play("click");
+
+            if(!saveData.hardUnlocked)
+                return;
+
+            this.buildHardLevelGrid();
+
+            this.showOverlay(
+                "menu-hard"
+            );
+        };
+
+
+        document.getElementById(
+            "btn-back-levels"
+        ).onclick=()=>{
+
+            audio.play("click");
+
+            this.showOverlay(
+                "menu-main"
+            );
+        };
+
+
+        document.getElementById(
+            "btn-back-hard"
+        ).onclick=()=>{
+
+            audio.play("click");
+
+            this.showOverlay(
+                "menu-main"
+            );
+        };
+
+
+        document.getElementById(
+            "btn-reset-data"
+        ).onclick=()=>{
+
+            if(
+                confirm(
+                    "Are you sure you want to reset progress?"
+                )
+            ){
+
+                resetProgress();
+
+                this.buildLevelGrid();
+                this.buildHardLevelGrid();
+
+                this.updateHardButton();
+
+                audio.play("click");
+            }
+        };
+
+
+        document.getElementById(
+            "btn-pause-hud"
+        ).onclick=()=>this.togglePause();
+
+
+        document.getElementById(
+            "btn-restart-hud"
+        ).onclick=()=>this.restartLevel();
+
+
+        document.getElementById(
+            "btn-resume"
+        ).onclick=()=>this.togglePause();
+
+
+        document.getElementById(
+            "btn-pause-restart"
+        ).onclick=()=>{
+
+            this.hideOverlays();
+
+            this.restartLevel();
+        };
+
+
+        document.getElementById(
+            "btn-pause-select"
+        ).onclick=()=>{
+
+            if(this.isHardMode)
+                this.showOverlay(
+                    "menu-hard"
+                );
+            else
+                this.showOverlay(
+                    "menu-levels"
+                );
+        };
+
+
+        document.getElementById(
+            "btn-pause-hard"
+        ).onclick=()=>{
+
+            if(saveData.hardUnlocked)
+                this.showOverlay(
+                    "menu-hard"
+                );
+        };
+
+
+        document.getElementById(
+            "btn-pause-main"
+        ).onclick=()=>{
+
+            this.showOverlay(
+                "menu-main"
+            );
+        };
+
+
+        document.getElementById(
+            "btn-next-level"
+        ).onclick=()=>{
+
+            audio.play("click");
+
+            this.nextLevel();
+        };
+
+
+        document.getElementById(
+            "btn-win-select"
+        ).onclick=()=>{
+
+            if(this.isHardMode)
+                this.showOverlay(
+                    "menu-hard"
+                );
+            else
+                this.showOverlay(
+                    "menu-levels"
+                );
+        };
+
+
+        document.getElementById(
+            "btn-complete-main"
+        ).onclick=()=>{
+
+            this.showOverlay(
+                "menu-main"
+            );
+        };
+    }
+
+
+    /* ========================================================
+       OVERLAYS
+    ======================================================== */
+
+    showOverlay(id){
+
+        document
+            .querySelectorAll(".overlay")
+            .forEach(
+                el=>el.classList.add("hidden")
+            );
+
+        if(id)
+            document
+                .getElementById(id)
+                .classList.remove("hidden");
+    }
+
+
+    hideOverlays(){
+
+        document
+            .querySelectorAll(".overlay")
+            .forEach(
+                el=>el.classList.add("hidden")
+            );
+    }
+
+
+    /* ========================================================
+       NORMAL LEVEL GRID
+    ======================================================== */
+
+    buildLevelGrid(){
+
+        const grid=
+            document.getElementById(
+                "level-grid"
+            );
+
+        grid.innerHTML="";
+
+        LEVEL_REGISTRY.forEach(
+            (lvl,idx)=>{
+
+                const num=idx+1;
+
+                const unlocked=
+                    num<=saveData.unlocked;
+
+                const completed=
+                    saveData.bestTimes[num]!==undefined;
+
+                const btn=
+                    document.createElement("div");
+
+                btn.className=
+                    `level-btn ${
+                        unlocked?
+                        "unlocked":
+                        "locked"
+                    } ${
+                        completed?
+                        "completed":
+                        ""
+                    }`;
+
+                let html=
+                    `<div class="level-num">${num}</div>`;
+
+                if(completed){
+
+                    html+=
+                        `<div class="level-info">
+                            ⏱ ${this.formatTime(
+                                saveData.bestTimes[num]
+                            )}
+                        </div>`;
+
+                }else if(unlocked){
+
+                    html+=
+                        `<div class="level-info">
+                            Available
+                        </div>`;
+
+                }else{
+
+                    html+=
+                        `<div class="level-info">
+                            Locked
+                        </div>`;
+                }
+
+                btn.innerHTML=html;
+
+                if(unlocked){
+
+                    btn.onclick=()=>{
+
+                        audio.play("click");
+
+                        this.startNormalLevel(idx);
+                    };
+                }
+
+                grid.appendChild(btn);
+            }
+        );
+    }
+
+
+    /* ========================================================
+       HARD LEVEL GRID
+    ======================================================== */
+
+    buildHardLevelGrid(){
+
+        const grid=
+            document.getElementById(
+                "hard-level-grid"
+            );
+
+        grid.innerHTML="";
+
+        HARD_LEVELS.forEach(
+            (lvl,idx)=>{
+
+                const hardNum=idx+1;
+
+                const completed=
+                    saveData.hardBestTimes[hardNum]!==undefined;
+
+                /* كل مرحلة صعبة تم فتحها تبقى Availableة لRestart اللعب دائمًا. */
+                const unlocked=
+                    saveData.hardUnlocked&&
+                    (hardNum===1 ||
+                     saveData.hardUnlockedLevels[hardNum]===true ||
+                     completed);
+
+                const btn=
+                    document.createElement("div");
+
+                btn.className=
+                    `level-btn hard ${
+                        unlocked?
+                        "unlocked":
+                        "locked"
+                    } ${
+                        completed?
+                        "completed":
+                        ""
+                    }`;
+
+                let html=
+                    `<div class="level-num">
+                        ${hardNum}
+                    </div>`;
+
+                if(completed){
+
+                    html+=
+                        `<div class="level-info">
+                            ⏱ ${this.formatTime(
+                                saveData.hardBestTimes[hardNum]
+                            )}
+                        </div>`;
+
+                }else if(unlocked){
+
+                    html+=
+                        `<div class="level-info">
+                            Available
+                        </div>`;
+
+                }else{
+
+                    html+=
+                        `<div class="level-info">
+                            🔒 Locked
+                        </div>`;
+                }
+
+                btn.innerHTML=html;
+
+                if(unlocked){
+
+                    btn.onclick=()=>{
+
+                        audio.play("click");
+
+                        this.startHardLevel(idx);
+                    };
+                }
+
+                grid.appendChild(btn);
+            }
+        );
+    }
+
+
+    /*
+      عدد Levels الصعبة المفتوحة.
+      hardUnlocked = true يفتح الorلى.
+      إتمام مرحلة صعبة يفتح التالية.
+    */
+    getHardUnlockedNumber(){
+
+        if(!saveData.hardUnlocked)
+            return 0;
+
+        let highest=1;
+
+        for(let i=1;i<=HARD_LEVELS.length;i++){
+            if(
+                saveData.hardUnlockedLevels[i]===true ||
+                saveData.hardBestTimes[i]!==undefined
+            ){
+                highest=Math.max(highest,i);
+            }
+        }
+
+        return highest;
+    }
+
+
+    /* ========================================================
+       HARD BUTTON
+    ======================================================== */
+
+    updateHardButton(){
+
+        const btn=
+            document.getElementById(
+                "btn-hard-menu"
+            );
+
+        if(saveData.hardUnlocked){
+
+            btn.classList.remove(
+                "btn-locked"
+            );
+
+            btn.innerHTML=
+                "Hard Mode 🔥";
+
+        }else{
+
+            btn.classList.add(
+                "btn-locked"
+            );
+
+            btn.innerHTML=
+                "🔒 Hard Mode — Complete 20 Levels";
+        }
+    }
+
+
+    /* ========================================================
+       START NORMAL
+    ======================================================== */
+
+    startNormalLevel(idx){
+
+        this.isHardMode=false;
+
+        this.currentLevelIdx=idx;
+
+        this.currentLevel=
+            LEVEL_REGISTRY[idx];
+
+        this.currentLevel.init();
+
+        this.player.reset(
+            this.currentLevel.spawnX,
+            this.currentLevel.spawnY
+        );
+
+        this.camera.x=
+            this.player.x-480;
+
+        this.camera.y=
+            this.player.y-270;
+
+        this.levelTime=0;
+
+        this.levelDeaths=
+            saveData.deaths[idx+1]||0;
+
+        this.state="PLAYING";
+
+        this.hideOverlays();
+
+        this.updateHUD();
+    }
+
+
+    /* ========================================================
+       START HARD
+    ======================================================== */
+
+    startHardLevel(idx){
+
+        if(!saveData.hardUnlocked)
+            return;
+
+        this.isHardMode=true;
+
+        this.currentLevelIdx=idx;
+
+        this.currentLevel=
+            HARD_LEVELS[idx];
+
+        this.currentLevel.init();
+
+        this.player.reset(
+            this.currentLevel.spawnX,
+            this.currentLevel.spawnY
+        );
+
+        this.camera.x=
+            this.player.x-480;
+
+        this.camera.y=
+            this.player.y-270;
+
+        this.levelTime=0;
+
+        this.levelDeaths=
+            saveData.hardDeaths[idx+1]||0;
+
+        this.state="PLAYING";
+
+        this.hideOverlays();
+
+        this.updateHUD();
+    }
+
+
+    /* ========================================================
+       RESTART
+    ======================================================== */
+
+    restartLevel(){
+
+        if(!this.currentLevel)
+            return;
+
+        this.currentLevel.init();
+
+        this.player.reset(
+            this.currentLevel.spawnX,
+            this.currentLevel.spawnY
+        );
+
+        this.levelTime=0;
+
+        this.state="PLAYING";
+
+        this.hideOverlays();
+
+        audio.play("click");
+    }
+
+
+    /* ========================================================
+       PAUSE
+    ======================================================== */
+
+    togglePause(){
+
+        if(this.state==="PLAYING"){
+
+            this.state="PAUSED";
+
+            this.showOverlay(
+                "menu-pause"
+            );
+
+        }else if(this.state==="PAUSED"){
+
+            this.state="PLAYING";
+
+            this.hideOverlays();
+        }
+    }
+
+
+    /* ========================================================
+       DEATH
+    ======================================================== */
+
+    showDeathMessage(text){
+
+        this.levelDeaths++;
+
+        saveData.totalDeaths=
+            (saveData.totalDeaths||0)+1;
+
+        if(this.isHardMode){
+
+            saveData.hardDeaths[
+                this.currentLevelIdx+1
+            ]=this.levelDeaths;
+
+        }else{
+
+            saveData.deaths[
+                this.currentLevelIdx+1
+            ]=this.levelDeaths;
+        }
+
+        saveProgress();
+
+        this.updateHUD();
+
+        const msg=
+            document.getElementById(
+                "death-msg"
+            );
+
+        msg.innerText=text;
+
+        msg.classList.add("show");
+
+        setTimeout(()=>{
+
+            msg.classList.remove("show");
+
+            this.restartLevel();
+
+        },600);
+    }
+
+
+    /* ========================================================
+       COMPLETE LEVEL
+    ======================================================== */
+
+    onLevelComplete(){
+
+        this.state="WIN";
+
+        const num=
+            this.currentLevelIdx+1;
+
+        if(this.isHardMode){
+
+            /* حفظ أفضل وقت */
+            const prev=
+                saveData.hardBestTimes[num];
+
+            if(
+                !prev||
+                this.levelTime<prev
+            ){
+
+                saveData.hardBestTimes[num]=
+                    this.levelTime;
+            }
+
+            /* احفظ المرحلة الحالية وافتح التالية بشكل دائم. */
+            saveData.hardUnlockedLevels[num]=true;
+
+            if(num<HARD_LEVELS.length){
+                saveData.hardUnlockedLevels[num+1]=true;
+            }
+
+        }else{
+
+            /* فتح المرحلة العادية التالية */
+            if(num===saveData.unlocked){
+
+                saveData.unlocked=
+                    Math.min(
+                        LEVEL_REGISTRY.length,
+                        num+1
+                    );
+            }
+
+            const prev=
+                saveData.bestTimes[num];
+
+            if(
+                !prev||
+                this.levelTime<prev
+            ){
+
+                saveData.bestTimes[num]=
+                    this.levelTime;
+            }
+
+            /*
+              عند إنهاء المرحلة 20
+              يفتح Hard Mode.
+            */
+            if(num===20){
+
+                saveData.hardUnlocked=true;
+                saveData.hardUnlockedLevels[1]=true;
+            }
+        }
+
+        saveProgress();
+
+        this.buildLevelGrid();
+        this.buildHardLevelGrid();
+        this.updateHardButton();
+
+        document.getElementById(
+            "win-deaths"
+        ).innerText=this.levelDeaths;
+
+        document.getElementById(
+            "win-time"
+        ).innerText=
+            this.formatTime(
+                this.levelTime
+            );
+
+        const best=
+            this.isHardMode?
+            saveData.hardBestTimes[num]:
+            saveData.bestTimes[num];
+
+        document.getElementById(
+            "win-best"
+        ).innerText=
+            this.formatTime(best);
+
+        const nextBtn=
+            document.getElementById(
+                "btn-next-level"
+            );
+
+        if(this.isHardMode){
+
+            if(num<HARD_LEVELS.length){
+
+                nextBtn.innerText=
+                    "Next Hard Level 🔥";
+
+            }else{
+
+                nextBtn.innerText=
+                    "Complete Game 🏆";
+            }
+
+        }else{
+
+            if(num===20){
+
+                nextBtn.innerText=
+                    "فتح Hard Mode 🔥";
+
+            }else{
+
+                nextBtn.innerText=
+                    "Next Level";
+            }
+        }
+
+        this.showOverlay(
+            "menu-win"
+        );
+    }
+
+
+    /* ========================================================
+       NEXT
+    ======================================================== */
+
+    nextLevel(){
+
+        const num=
+            this.currentLevelIdx+1;
+
+        if(this.isHardMode){
+
+            if(num<HARD_LEVELS.length){
+
+                this.startHardLevel(
+                    this.currentLevelIdx+1
+                );
+
+            }else{
+
+                this.showGameComplete();
+            }
+
+            return;
+        }
+
+        if(num<20){
+
+            this.startNormalLevel(
+                this.currentLevelIdx+1
+            );
+
+        }else{
+
+            /*
+              بعد إتمام المرحلة 20:
+              افتح Hard Mode.
+            */
+
+            saveData.hardUnlocked=true;
+            saveData.hardUnlockedLevels[1]=true;
+
+            saveProgress();
+
+            this.updateHardButton();
+
+            this.showOverlay(
+                "menu-hard"
+            );
+        }
+    }
+
+
+    /* ========================================================
+       FINAL COMPLETE
+    ======================================================== */
+
+    showGameComplete(){
+
+        this.state="WIN";
+
+        let totalTime=0;
+
+        Object.values(
+            saveData.bestTimes
+        ).forEach(
+            t=>totalTime+=t
+        );
+
+        Object.values(
+            saveData.hardBestTimes
+        ).forEach(
+            t=>totalTime+=t
+        );
+
+        document.getElementById(
+            "comp-deaths"
+        ).innerText=
+            saveData.totalDeaths||0;
+
+        document.getElementById(
+            "comp-time"
+        ).innerText=
+            this.formatTime(totalTime);
+
+        this.showOverlay(
+            "menu-complete"
+        );
+    }
+
+
+    /* ========================================================
+       TIME
+    ======================================================== */
+
+    formatTime(sec){
+
+        if(!sec)
+            return "00:00.0";
+
+        const m=
+            Math.floor(sec/60);
+
+        const s=
+            (sec%60).toFixed(1);
+
+        return (
+            `${m<10?"0":""}${m}:`+
+            `${s<10?"0":""}${s}`
+        );
+    }
+
+
+    /* ========================================================
+       HUD
+    ======================================================== */
+
+    updateHUD(){
+
+        let levelNumber;
+
+        if(this.isHardMode){
+
+            levelNumber=
+                this.currentLevelIdx+21;
+
+        }else{
+
+            levelNumber=
+                this.currentLevelIdx+1;
+        }
+
+        document.getElementById(
+            "hud-level"
+        ).innerText=
+            String(levelNumber).padStart(2,"0");
+
+        document.getElementById(
+            "hud-deaths"
+        ).innerText=
+            this.levelDeaths;
+
+        document.getElementById(
+            "hud-timer"
+        ).innerText=
+            this.formatTime(
+                this.levelTime
+            );
+    }
+
+
+    /* ========================================================
+       MAIN LOOP
+    ======================================================== */
+
+    run(timestamp=0){
+
+        const dt=
+            Math.min(
+                .033,
+                (timestamp-this.lastTime)/1000
+            );
+
+        this.lastTime=timestamp;
+
+        if(this.state==="PLAYING"){
+
+            this.levelTime+=dt;
+
+            this.player.update(
+                dt,
+                this.keys,
+                this.currentLevel
+            );
+
+            this.currentLevel.update(
+                dt,
+                this.player
+            );
+
+            this.camera.update(
+                this.player.x+
+                    this.player.w/2,
+
+                this.player.y+
+                    this.player.h/2,
+
+                this.currentLevel.width,
+                this.currentLevel.height,
+                dt
+            );
+
+            this.updateHUD();
+        }
+
+        if(this.currentLevel){
+
+            this.currentLevel.draw(
+                this.ctx,
+                this.camera.renderX,
+                this.camera.renderY
+            );
+
+            this.player.draw(
+                this.ctx,
+                this.camera.renderX,
+                this.camera.renderY
+            );
+        }
+
+        requestAnimationFrame(
+            t=>this.run(t)
+        );
+    }
+}
+
+
+/* ============================================================
+   START
+============================================================ */
+
+const game=new GameEngine();
+
+game.run();
+
+</script>
+
+</body>
+</html>
